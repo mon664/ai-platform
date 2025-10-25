@@ -92,7 +92,7 @@ export async function POST(request: Request) {
               }]
             }],
             generationConfig: {
-              responseModalities: ["IMAGE"]
+              responseModalities: ["IMAGE", "TEXT"]
             }
           })
         }
