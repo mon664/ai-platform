@@ -34,8 +34,16 @@ export default function StoryGenerator() {
       })
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
-        throw new Error(errorData.error || `Server error: ${res.status}`)
+        const errorText = await res.text()
+        console.error('API Error Response:', errorText)
+
+        try {
+          const errorData = JSON.parse(errorText)
+          throw new Error(errorData.error || errorData.message || errorText)
+        } catch (parseError) {
+          // If response is not JSON, show raw text
+          throw new Error(errorText || `Server error: ${res.status}`)
+        }
       }
 
       const data = await res.json()

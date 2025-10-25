@@ -64,10 +64,11 @@ export async function onRequestPost(context) {
     )
 
     if (!geminiResponse.ok) {
-      const error = await geminiResponse.text()
+      const errorText = await geminiResponse.text()
+      console.error('GEMINI_ERROR', geminiResponse.status, errorText)
       return new Response(
-        JSON.stringify({ error: 'Gemini API failed', details: error }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        errorText,
+        { status: geminiResponse.status, headers: { 'Content-Type': 'application/json' } }
       )
     }
 
@@ -94,10 +95,11 @@ export async function onRequestPost(context) {
     )
 
     if (!gptResponse.ok) {
-      const error = await gptResponse.text()
+      const errorText = await gptResponse.text()
+      console.error('OPENAI_GPT4_ERROR', gptResponse.status, errorText)
       return new Response(
-        JSON.stringify({ error: 'GPT-4 failed', details: error }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        errorText,
+        { status: gptResponse.status, headers: { 'Content-Type': 'application/json' } }
       )
     }
 
@@ -132,6 +134,10 @@ export async function onRequestPost(context) {
       if (dalleResponse.ok) {
         const dalleData = await dalleResponse.json()
         sceneUrls.push(dalleData.data[0].url)
+      } else {
+        const errorText = await dalleResponse.text()
+        console.error('OPENAI_DALLE_ERROR', dalleResponse.status, errorText)
+        // Continue with other images even if one fails
       }
     }
 
@@ -141,8 +147,12 @@ export async function onRequestPost(context) {
     )
 
   } catch (error) {
+    console.error('SERVER_ERROR', error)
     return new Response(
-      JSON.stringify({ error: error.message || 'Server error' }),
+      JSON.stringify({
+        error: error.message || String(error),
+        stack: error.stack
+      }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }
