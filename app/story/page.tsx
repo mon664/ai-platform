@@ -9,6 +9,7 @@ export default function StoryGenerator() {
   const [persona, setPersona] = useState('')
   const [sceneCount, setSceneCount] = useState(8)
   const [aspectRatio, setAspectRatio] = useState('16:9')
+  const [imageEngine, setImageEngine] = useState('imagen')
   const [loading, setLoading] = useState(false)
   const [scenes, setScenes] = useState<string[]>([])
 
@@ -28,6 +29,7 @@ export default function StoryGenerator() {
     formData.append('persona', persona)
     formData.append('sceneCount', sceneCount.toString())
     formData.append('aspectRatio', aspectRatio)
+    formData.append('imageEngine', imageEngine)
 
     try {
       const res = await fetch('/api/generate', {
@@ -138,7 +140,7 @@ export default function StoryGenerator() {
           <select
             value={aspectRatio}
             onChange={(e) => setAspectRatio(e.target.value)}
-            className="w-full p-2 bg-gray-700 rounded"
+            className="w-full p-2 bg-gray-700 rounded mb-4"
           >
             <option value="16:9">16:9 (가로형 - 영화, 유튜브)</option>
             <option value="9:16">9:16 (세로형 - 릴스, 쇼츠)</option>
@@ -146,6 +148,19 @@ export default function StoryGenerator() {
             <option value="4:3">4:3 (가로형 - 클래식)</option>
             <option value="3:4">3:4 (세로형 - 포트레이트)</option>
           </select>
+
+          <label className="block mb-2">이미지 생성 엔진:</label>
+          <select
+            value={imageEngine}
+            onChange={(e) => setImageEngine(e.target.value)}
+            className="w-full p-2 bg-gray-700 rounded"
+          >
+            <option value="imagen">Imagen 3.0 (기본 - 빠름)</option>
+            <option value="vertex">Vertex AI (얼굴 일관성 최고 - 참조 이미지 사용)</option>
+          </select>
+          <p className="text-sm text-gray-400 mt-2">
+            💡 Vertex AI는 업로드한 얼굴 이미지를 직접 참조하여 더 일관된 결과를 생성합니다.
+          </p>
         </div>
 
         {/* Generate Button */}

@@ -8,6 +8,7 @@ export async function POST(request: Request) {
     const persona = formData.get('persona') as string || ''
     const sceneCount = parseInt(formData.get('sceneCount') as string)
     const aspectRatio = formData.get('aspectRatio') as string || '16:9'
+    const imageEngine = formData.get('imageEngine') as string || 'imagen'
 
     if (!protagonist || !story) {
       return new Response(JSON.stringify({ error: 'Missing data' }), { status: 400 })
@@ -34,7 +35,50 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           contents: [{
             parts: [
-              { text: "Describe this person's facial features in extreme detail for AI image generation. Include: exact age, gender, ethnicity, skin tone, face shape, eye shape/color, eyebrow shape, nose shape, lip shape, facial hair (if any), hairstyle/color/length, distinctive features (moles, scars, etc). Be very specific and detailed (200 words):" },
+              { text: `Analyze this person's face with EXTREME precision for AI character consistency. Provide measurements and specific details:
+
+FACE STRUCTURE:
+- Face shape (oval/round/square/heart/diamond)
+- Facial proportions (forehead:midface:jaw ratio)
+- Jawline definition and angle
+- Cheekbone prominence and placement
+
+EYES (CRITICAL):
+- Exact eye shape (almond/round/hooded/upturned/downturned)
+- Eye color (specific shade, patterns, depth)
+- Eye size relative to face
+- Distance between eyes (wide-set/close-set/average)
+- Eyelid type (monolid/double-lid)
+- Eyebrow shape, thickness, arch position
+
+NOSE:
+- Nose bridge (high/low/straight/curved)
+- Nose width and nostril shape
+- Nose tip shape (pointed/rounded/bulbous)
+- Nose length relative to face
+
+MOUTH & LIPS:
+- Lip fullness (upper and lower separately)
+- Lip shape and cupid's bow definition
+- Mouth width relative to nose
+- Smile characteristics
+
+SKIN & COMPLEXION:
+- Exact skin tone (warm/cool/neutral undertones)
+- Skin texture and any distinctive marks
+- Facial hair details (if present)
+
+HAIR:
+- Hair color (exact shade and highlights)
+- Hair texture and density
+- Hairstyle and length
+- Hairline shape
+
+DISTINCTIVE FEATURES:
+- Moles, freckles, scars (exact position)
+- Any unique characteristics
+
+Output: 250-300 words with numerical precision where possible.` },
               { inlineData: { mimeType: protagonist.type, data: base64 } }
             ]
           }]
@@ -77,51 +121,132 @@ export async function POST(request: Request) {
     const scenes = JSON.parse(sceneText.replace(/```json\n?|\n?```/g, ''))
     console.log('[DEBUG] Scenes array:', scenes)
 
-    // Imagen 3.0 - Image generation
+    // Image generation - Choose engine
     const images: string[] = []
 
-    for (const scene of scenes) {
-      const imagenRes = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict',
-        {
-          method: 'POST',
-          headers: {
-            'x-goog-api-key': process.env.GEMINI_API_KEY as string,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            instances: [{
-              prompt: `Cinematic ${aspectRatio} scene: ${scene}\n\nIMPORTANT - Main character MUST have these EXACT facial features: ${face}\n\nStyle: photorealistic, cinematic lighting, high detail, consistent character appearance`
-            }],
-            parameters: {
-              sampleCount: 1,
-              aspectRatio: aspectRatio
-            }
-          })
-        }
-      )
+    if (imageEngine === 'vertex') {
+      // Vertex AI Subject Customization - Use reference image
+      console.log('[DEBUG] Using Vertex AI Subject Customization')
 
-      if (imagenRes.ok) {
-        const data = await imagenRes.json()
-        console.log('[DEBUG] Image generation response:', JSON.stringify(data).substring(0, 500))
+      for (const scene of scenes) {
+        const vertexRes = await fetch(
+          `https://${process.env.VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${process.env.VERTEX_PROJECT_ID}/locations/${process.env.VERTEX_LOCATION}/publishers/google/models/imagen-3.0-capability-001:predict`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.VERTEX_AI_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              instances: [{
+                prompt: `${scene}. Main character is [1]. Style: Cinematic ${aspectRatio}, photorealistic, professional lighting, high detail, film quality.`,
+                referenceImages: [{
+                  referenceType: 'REFERENCE_TYPE_SUBJECT',
+                  referenceId: 1,
+                  referenceImage: {
+                    bytesBase64Encoded: base64
+                  },
+                  subjectImageConfig: {
+                    subjectDescription: face,
+                    subjectType: 'SUBJECT_TYPE_PERSON'
+                  }
+                }]
+              }],
+              parameters: {
+                sampleCount: 1,
+                aspectRatio: aspectRatio
+              }
+            })
+          }
+        )
 
-        if (!data.predictions || !data.predictions[0]?.bytesBase64Encoded) {
+        if (vertexRes.ok) {
+          const data = await vertexRes.json()
+          console.log('[DEBUG] Vertex AI response:', JSON.stringify(data).substring(0, 500))
+
+          if (!data.predictions || !data.predictions[0]?.bytesBase64Encoded) {
+            return new Response(JSON.stringify({
+              error: 'Invalid Vertex AI response',
+              response: JSON.stringify(data).substring(0, 500)
+            }), { status: 500 })
+          }
+
+          const imageData = data.predictions[0].bytesBase64Encoded
+          images.push(`data:image/png;base64,${imageData}`)
+        } else {
+          const errText = await vertexRes.text()
+          console.error('[ERROR] Vertex AI failed:', errText)
           return new Response(JSON.stringify({
-            error: 'Invalid image response',
-            response: JSON.stringify(data).substring(0, 500)
+            error: 'Vertex AI failed',
+            status: vertexRes.status,
+            details: errText.substring(0, 500)
           }), { status: 500 })
         }
+      }
+    } else {
+      // Imagen 3.0 - Standard generation
+      console.log('[DEBUG] Using standard Imagen 3.0')
 
-        const imageData = data.predictions[0].bytesBase64Encoded
-        images.push(`data:image/png;base64,${imageData}`)
-      } else {
-        const errText = await imagenRes.text()
-        console.error('[ERROR] Image generation failed:', errText)
-        return new Response(JSON.stringify({
-          error: 'Image API failed',
-          status: imagenRes.status,
-          details: errText.substring(0, 500)
-        }), { status: 500 })
+      for (const scene of scenes) {
+        const imagenRes = await fetch(
+          'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict',
+          {
+            method: 'POST',
+            headers: {
+              'x-goog-api-key': process.env.GEMINI_API_KEY as string,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              instances: [{
+                prompt: `${scene}
+
+CRITICAL CHARACTER REQUIREMENTS - DO NOT DEVIATE:
+The main character MUST have these EXACT facial features with 100% accuracy:
+${face}
+
+STRICT GUIDELINES:
+- Match EVERY facial measurement and proportion exactly
+- Maintain identical eye shape, color, and spacing
+- Preserve exact nose structure and lip shape
+- Keep consistent skin tone and complexion
+- Replicate hairstyle and color precisely
+- Include all distinctive features (moles, scars, etc.)
+- NO variations in facial structure between scenes
+
+Style: Cinematic ${aspectRatio}, photorealistic, professional lighting, high detail, film quality, consistent character identity across all frames
+
+Negative prompt: different face, altered features, inconsistent appearance, wrong eye color, different hairstyle, changed facial structure`
+              }],
+              parameters: {
+                sampleCount: 1,
+                aspectRatio: aspectRatio
+              }
+            })
+          }
+        )
+
+        if (imagenRes.ok) {
+          const data = await imagenRes.json()
+          console.log('[DEBUG] Image generation response:', JSON.stringify(data).substring(0, 500))
+
+          if (!data.predictions || !data.predictions[0]?.bytesBase64Encoded) {
+            return new Response(JSON.stringify({
+              error: 'Invalid image response',
+              response: JSON.stringify(data).substring(0, 500)
+            }), { status: 500 })
+          }
+
+          const imageData = data.predictions[0].bytesBase64Encoded
+          images.push(`data:image/png;base64,${imageData}`)
+        } else {
+          const errText = await imagenRes.text()
+          console.error('[ERROR] Image generation failed:', errText)
+          return new Response(JSON.stringify({
+            error: 'Image API failed',
+            status: imagenRes.status,
+            details: errText.substring(0, 500)
+          }), { status: 500 })
+        }
       }
     }
 
