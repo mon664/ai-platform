@@ -101,18 +101,31 @@ export async function POST(request: Request) {
       if (imagenRes.ok) {
         const data = await imagenRes.json()
         console.log('[DEBUG] Image generation response:', JSON.stringify(data))
+
+        if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.inlineData?.data) {
+          return new Response(JSON.stringify({
+            error: 'Invalid image response',
+            response: JSON.stringify(data).substring(0, 500)
+          }), { status: 500 })
+        }
+
         const imageData = data.candidates[0].content.parts[0].inlineData.data
         images.push(`data:image/jpeg;base64,${imageData}`)
       } else {
         const errText = await imagenRes.text()
         console.error('[ERROR] Image generation failed:', errText)
+        return new Response(JSON.stringify({
+          error: 'Image API failed',
+          status: imagenRes.status,
+          details: errText.substring(0, 500)
+        }), { status: 500 })
       }
     }
 
     console.log('[DEBUG] Total images generated:', images.length)
 
     if (images.length === 0) {
-      return new Response(JSON.stringify({ error: 'Failed to generate images' }), { status: 500 })
+      return new Response(JSON.stringify({ error: 'No images generated (loop completed but empty)' }), { status: 500 })
     }
 
     return new Response(JSON.stringify({ scenes: images }), {
