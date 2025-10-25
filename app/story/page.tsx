@@ -144,10 +144,30 @@ export default function StoryGenerator() {
         {/* Results */}
         {scenes.length > 0 && (
           <div className="mt-8 bg-gray-800 rounded-lg p-6">
-            <h2 className="text-2xl mb-4">생성된 장면</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl">생성된 장면 ({scenes.length}개)</h2>
+              <button
+                onClick={() => {
+                  setScenes([])
+                  setLoading(false)
+                }}
+                className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm"
+              >
+                다시 생성하기
+              </button>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               {scenes.map((url, i) => (
-                <img key={i} src={url} alt={`Scene ${i + 1}`} className="rounded" />
+                <div key={i} className="relative group">
+                  <img src={url} alt={`Scene ${i + 1}`} className="rounded w-full" />
+                  <a
+                    href={url}
+                    download={`scene-${i + 1}.png`}
+                    className="absolute bottom-2 right-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition"
+                  >
+                    다운로드
+                  </a>
+                </div>
               ))}
             </div>
           </div>
