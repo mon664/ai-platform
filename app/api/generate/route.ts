@@ -120,67 +120,72 @@ Output: 250-300 words with numerical precision where possible.` },
     const scenes = JSON.parse(sceneText.replace(/```json\n?|\n?```/g, ''))
     console.log('[DEBUG] Scenes array:', scenes)
 
-    // Imagen 3.0 - Enhanced image generation with improved face consistency
+    // Nano Banana (Gemini 2.5 Flash Image) - Character consistency with reference image
     const images: string[] = []
-    console.log('[DEBUG] Using enhanced Imagen 3.0 with detailed face prompts')
+    console.log('[DEBUG] Using Nano Banana (gemini-2.5-flash-image) with reference image')
 
     for (const scene of scenes) {
-      const imagenRes = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict',
+      const nanoRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${process.env.GEMINI_API_KEY}`,
         {
           method: 'POST',
-          headers: {
-            'x-goog-api-key': process.env.GEMINI_API_KEY as string,
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            instances: [{
-              prompt: `${scene}
+            contents: [{
+              parts: [
+                {
+                  text: `Generate a cinematic scene: ${scene}
 
-CRITICAL CHARACTER REQUIREMENTS - DO NOT DEVIATE:
-The main character MUST have these EXACT facial features with 100% accuracy:
-${face}
+The main character in this scene should look EXACTLY like the person in the reference image provided. Maintain perfect facial consistency including all features, expressions, skin tone, and distinctive marks.
 
-STRICT GUIDELINES:
-- Match EVERY facial measurement and proportion exactly
-- Maintain identical eye shape, color, and spacing
-- Preserve exact nose structure and lip shape
-- Keep consistent skin tone and complexion
-- Replicate hairstyle and color precisely
-- Include all distinctive features (moles, scars, etc.)
-- NO variations in facial structure between scenes
-
-Style: Cinematic ${aspectRatio} aspect ratio, photorealistic, professional lighting, high detail, film quality, consistent character identity across all frames
-
-Negative prompt: different face, altered features, inconsistent appearance, wrong eye color, different hairstyle, changed facial structure`
+Style: Photorealistic, cinematic lighting, high detail, film quality.`
+                },
+                {
+                  inline_data: {
+                    mime_type: protagonist.type,
+                    data: base64
+                  }
+                }
+              ]
             }],
-            parameters: {
-              sampleCount: 1,
-              aspectRatio: aspectRatio
+            generationConfig: {
+              response_modalities: ['Image'],
+              image_config: {
+                aspect_ratio: aspectRatio
+              }
             }
           })
         }
       )
 
-      if (imagenRes.ok) {
-        const data = await imagenRes.json()
-        console.log('[DEBUG] Image generation response:', JSON.stringify(data).substring(0, 500))
+      if (nanoRes.ok) {
+        const data = await nanoRes.json()
+        console.log('[DEBUG] Nano Banana response:', JSON.stringify(data).substring(0, 500))
 
-        if (!data.predictions || !data.predictions[0]?.bytesBase64Encoded) {
+        if (!data.candidates || !data.candidates[0]?.content?.parts) {
           return new Response(JSON.stringify({
-            error: 'Invalid image response',
+            error: 'Invalid Nano Banana response',
             response: JSON.stringify(data).substring(0, 500)
           }), { status: 500 })
         }
 
-        const imageData = data.predictions[0].bytesBase64Encoded
+        // Find the image part in the response
+        const imagePart = data.candidates[0].content.parts.find((part: any) => part.inline_data)
+        if (!imagePart?.inline_data?.data) {
+          return new Response(JSON.stringify({
+            error: 'No image data in response',
+            response: JSON.stringify(data).substring(0, 500)
+          }), { status: 500 })
+        }
+
+        const imageData = imagePart.inline_data.data
         images.push(`data:image/png;base64,${imageData}`)
       } else {
-        const errText = await imagenRes.text()
-        console.error('[ERROR] Image generation failed:', errText)
+        const errText = await nanoRes.text()
+        console.error('[ERROR] Nano Banana failed:', errText)
         return new Response(JSON.stringify({
-          error: 'Image API failed',
-          status: imagenRes.status,
+          error: 'Nano Banana API failed',
+          status: nanoRes.status,
           details: errText.substring(0, 500)
         }), { status: 500 })
       }
