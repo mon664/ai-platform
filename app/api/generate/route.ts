@@ -95,8 +95,8 @@ export async function POST(request: Request) {
             parameters: {
               sampleCount: 1,
               aspectRatio: '16:9',
-              safetySetting: 'BLOCK_ONLY_HIGH',
-              personGeneration: 'ALLOW_ADULT'
+              safetySetting: 'block_low_and_above',
+              personGeneration: 'allow_adult'
             }
           })
         }
