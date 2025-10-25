@@ -76,23 +76,25 @@ export async function POST(request: Request) {
     const scenes = JSON.parse(sceneText.replace(/```json\n?|\n?```/g, ''))
     console.log('[DEBUG] Scenes array:', scenes)
 
-    // Gemini 2.0 - Image generation
+    // Imagen 3.0 - Image generation
     const images: string[] = []
 
     for (const scene of scenes) {
       const imagenRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict',
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'x-goog-api-key': process.env.GEMINI_API_KEY as string,
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `${scene}\n\nCharacter: ${face}`
-              }]
+            instances: [{
+              prompt: `${scene}\n\nCharacter: ${face}`
             }],
-            generationConfig: {
-              responseModalities: ["IMAGE", "TEXT"]
+            parameters: {
+              sampleCount: 1,
+              aspectRatio: '16:9'
             }
           })
         }
@@ -100,17 +102,17 @@ export async function POST(request: Request) {
 
       if (imagenRes.ok) {
         const data = await imagenRes.json()
-        console.log('[DEBUG] Image generation response:', JSON.stringify(data))
+        console.log('[DEBUG] Image generation response:', JSON.stringify(data).substring(0, 500))
 
-        if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.inlineData?.data) {
+        if (!data.predictions || !data.predictions[0]?.bytesBase64Encoded) {
           return new Response(JSON.stringify({
             error: 'Invalid image response',
             response: JSON.stringify(data).substring(0, 500)
           }), { status: 500 })
         }
 
-        const imageData = data.candidates[0].content.parts[0].inlineData.data
-        images.push(`data:image/jpeg;base64,${imageData}`)
+        const imageData = data.predictions[0].bytesBase64Encoded
+        images.push(`data:image/png;base64,${imageData}`)
       } else {
         const errText = await imagenRes.text()
         console.error('[ERROR] Image generation failed:', errText)
