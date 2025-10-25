@@ -150,13 +150,12 @@ STRICT GUIDELINES:
 - Include all distinctive features (moles, scars, etc.)
 - NO variations in facial structure between scenes
 
-Style: Cinematic ${aspectRatio}, photorealistic, professional lighting, high detail, film quality, consistent character identity across all frames
+Style: Cinematic ${aspectRatio} aspect ratio, photorealistic, professional lighting, high detail, film quality, consistent character identity across all frames
 
 Negative prompt: different face, altered features, inconsistent appearance, wrong eye color, different hairstyle, changed facial structure`
             }],
             parameters: {
-              sampleCount: 1,
-              aspectRatio: aspectRatio
+              sampleCount: 1
             }
           })
         }
