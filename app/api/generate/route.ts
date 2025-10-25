@@ -48,6 +48,7 @@ export async function POST(request: Request) {
 
     const geminiData = await geminiRes.json()
     const face = geminiData.candidates[0].content.parts[0].text
+    console.log('[DEBUG] Face description:', face)
 
     // Gemini 2.5 - Scene generation
     const sceneRes = await fetch(
@@ -73,6 +74,7 @@ export async function POST(request: Request) {
     const sceneData = await sceneRes.json()
     const sceneText = sceneData.candidates[0].content.parts[0].text
     const scenes = JSON.parse(sceneText.replace(/```json\n?|\n?```/g, ''))
+    console.log('[DEBUG] Scenes array:', scenes)
 
     // Gemini 2.0 - Image generation
     const images: string[] = []
@@ -98,9 +100,19 @@ export async function POST(request: Request) {
 
       if (imagenRes.ok) {
         const data = await imagenRes.json()
+        console.log('[DEBUG] Image generation response:', JSON.stringify(data))
         const imageData = data.candidates[0].content.parts[0].inlineData.data
         images.push(`data:image/jpeg;base64,${imageData}`)
+      } else {
+        const errText = await imagenRes.text()
+        console.error('[ERROR] Image generation failed:', errText)
       }
+    }
+
+    console.log('[DEBUG] Total images generated:', images.length)
+
+    if (images.length === 0) {
+      return new Response(JSON.stringify({ error: 'Failed to generate images' }), { status: 500 })
     }
 
     return new Response(JSON.stringify({ scenes: images }), {
