@@ -12,9 +12,18 @@ export async function POST(request: Request) {
       return new Response(JSON.stringify({ error: 'Missing data' }), { status: 400 })
     }
 
-    // Gemini Vision
+    // Gemini Vision - encode Base64 in chunks to avoid stack overflow
     const bytes = await protagonist.arrayBuffer()
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(bytes)))
+    const uint8Array = new Uint8Array(bytes)
+
+    // Chunk processing for large images
+    let base64 = ''
+    const chunkSize = 8192
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.slice(i, i + chunkSize)
+      base64 += String.fromCharCode.apply(null, Array.from(chunk))
+    }
+    base64 = btoa(base64)
 
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
@@ -78,7 +87,7 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           model: 'dall-e-3',
           prompt: `${scene.description}\n\nCharacter: ${face}`,
-          size: '1024x1024',
+          size: '1792x1024',
           quality: 'standard'
         })
       })
