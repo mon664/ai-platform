@@ -155,7 +155,8 @@ Style: Cinematic ${aspectRatio} aspect ratio, photorealistic, professional light
 Negative prompt: different face, altered features, inconsistent appearance, wrong eye color, different hairstyle, changed facial structure`
             }],
             parameters: {
-              sampleCount: 1
+              sampleCount: 1,
+              aspectRatio: aspectRatio
             }
           })
         }
