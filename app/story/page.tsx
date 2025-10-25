@@ -10,6 +10,8 @@ export default function StoryGenerator() {
   const [sceneCount, setSceneCount] = useState(8)
   const [aspectRatio, setAspectRatio] = useState('16:9')
   const [loading, setLoading] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [progressText, setProgressText] = useState('')
   const [scenes, setScenes] = useState<string[]>([])
 
   const handleGenerate = async () => {
@@ -20,6 +22,8 @@ export default function StoryGenerator() {
 
     setLoading(true)
     setScenes([])
+    setProgress(0)
+    setProgressText('얼굴 분석 중...')
 
     const formData = new FormData()
     formData.append('protagonist', protagonist)
@@ -34,6 +38,9 @@ export default function StoryGenerator() {
         method: 'POST',
         body: formData,
       })
+
+      setProgressText('장면 생성 중...')
+      setProgress(10)
 
       if (!res.ok) {
         const errorText = await res.text()
@@ -54,8 +61,27 @@ export default function StoryGenerator() {
         throw new Error('No scenes generated')
       }
 
-      setScenes(data.scenes)
-      alert('생성 완료!')
+      // 각 이미지가 생성될 때마다 진행률 업데이트
+      const totalScenes = data.totalScenes || sceneCount
+      const generatedScenes: string[] = []
+
+      for (let i = 0; i < data.scenes.length; i++) {
+        generatedScenes.push(data.scenes[i])
+        const progressPercent = Math.round(((i + 1) / totalScenes) * 90) + 10
+        setProgress(progressPercent)
+        setProgressText(`${i + 1}/${totalScenes} 장면 생성 완료`)
+        setScenes([...generatedScenes])
+
+        // 작은 지연으로 UI 업데이트 보장
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+
+      setProgress(100)
+      setProgressText('완료!')
+      setTimeout(() => {
+        setProgress(0)
+        setProgressText('')
+      }, 2000)
     } catch (error) {
       console.error('Generation error:', error)
       alert('생성 실패: ' + (error as Error).message)
@@ -154,8 +180,23 @@ export default function StoryGenerator() {
           disabled={loading}
           className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-bold py-4 rounded-lg text-xl transition"
         >
-          {loading ? '생성 중...' : '장면 생성하기'}
+          {loading ? progressText || '생성 중...' : '장면 생성하기'}
         </button>
+
+        {/* Progress Bar */}
+        {loading && (
+          <div className="mt-4">
+            <div className="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
+              <div
+                className="bg-blue-600 h-4 transition-all duration-300 ease-out flex items-center justify-center text-xs text-white font-semibold"
+                style={{ width: `${progress}%` }}
+              >
+                {progress > 0 && `${progress}%`}
+              </div>
+            </div>
+            <p className="text-center text-sm text-gray-400 mt-2">{progressText}</p>
+          </div>
+        )}
 
         {/* Results */}
         {scenes.length > 0 && (
