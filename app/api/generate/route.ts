@@ -134,7 +134,7 @@ Output: 250-300 words with numerical precision where possible.` },
           {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${process.env.VERTEX_AI_KEY}`,
+              'x-goog-api-key': process.env.VERTEX_AI_KEY as string,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
