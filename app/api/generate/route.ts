@@ -74,22 +74,23 @@ export async function POST(request: Request) {
     const sceneText = sceneData.candidates[0].content.parts[0].text
     const scenes = JSON.parse(sceneText.replace(/```json\n?|\n?```/g, ''))
 
-    // Imagen 4 - Image generation
+    // Gemini 2.0 - Image generation
     const images: string[] = []
 
     for (const scene of scenes) {
       const imagenRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${process.env.VERTEX_AI_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${process.env.GEMINI_API_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            instances: [{
-              prompt: `${scene}\n\nCharacter: ${face}`
+            contents: [{
+              parts: [{
+                text: `${scene}\n\nCharacter: ${face}`
+              }]
             }],
-            parameters: {
-              numberOfImages: 1,
-              aspectRatio: '16:9'
+            generationConfig: {
+              responseModalities: ["IMAGE"]
             }
           })
         }
@@ -97,7 +98,8 @@ export async function POST(request: Request) {
 
       if (imagenRes.ok) {
         const data = await imagenRes.json()
-        images.push(data.predictions[0].bytesBase64Encoded)
+        const imageData = data.candidates[0].content.parts[0].inlineData.data
+        images.push(`data:image/jpeg;base64,${imageData}`)
       }
     }
 
