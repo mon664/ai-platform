@@ -33,11 +33,21 @@ export default function StoryGenerator() {
         body: formData,
       })
 
-      if (!res.ok) throw new Error('Generation failed')
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(errorData.error || `Server error: ${res.status}`)
+      }
 
       const data = await res.json()
+
+      if (!data.scenes || data.scenes.length === 0) {
+        throw new Error('No scenes generated')
+      }
+
       setScenes(data.scenes)
+      alert('생성 완료!')
     } catch (error) {
+      console.error('Generation error:', error)
       alert('생성 실패: ' + (error as Error).message)
     } finally {
       setLoading(false)
