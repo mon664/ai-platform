@@ -8,6 +8,7 @@ export default function StoryGenerator() {
   const [story, setStory] = useState('')
   const [persona, setPersona] = useState('')
   const [sceneCount, setSceneCount] = useState(8)
+  const [aspectRatio, setAspectRatio] = useState('16:9')
   const [loading, setLoading] = useState(false)
   const [scenes, setScenes] = useState<string[]>([])
 
@@ -26,6 +27,7 @@ export default function StoryGenerator() {
     formData.append('story', story)
     formData.append('persona', persona)
     formData.append('sceneCount', sceneCount.toString())
+    formData.append('aspectRatio', aspectRatio)
 
     try {
       const res = await fetch('/api/generate', {
@@ -120,15 +122,29 @@ export default function StoryGenerator() {
         {/* Settings */}
         <div className="bg-gray-800 rounded-lg p-6 mb-6">
           <h2 className="text-2xl mb-4">4. 설정</h2>
+
           <label className="block mb-2">장면 수:</label>
           <select
             value={sceneCount}
             onChange={(e) => setSceneCount(Number(e.target.value))}
-            className="w-full p-2 bg-gray-700 rounded"
+            className="w-full p-2 bg-gray-700 rounded mb-4"
           >
             <option value={8}>8 장면</option>
             <option value={12}>12 장면</option>
             <option value={16}>16 장면</option>
+          </select>
+
+          <label className="block mb-2">사진 비율:</label>
+          <select
+            value={aspectRatio}
+            onChange={(e) => setAspectRatio(e.target.value)}
+            className="w-full p-2 bg-gray-700 rounded"
+          >
+            <option value="16:9">16:9 (가로형 - 영화, 유튜브)</option>
+            <option value="9:16">9:16 (세로형 - 릴스, 쇼츠)</option>
+            <option value="1:1">1:1 (정사각형 - 인스타그램)</option>
+            <option value="4:3">4:3 (가로형 - 클래식)</option>
+            <option value="3:4">3:4 (세로형 - 포트레이트)</option>
           </select>
         </div>
 

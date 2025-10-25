@@ -7,6 +7,7 @@ export async function POST(request: Request) {
     const story = formData.get('story') as string
     const persona = formData.get('persona') as string || ''
     const sceneCount = parseInt(formData.get('sceneCount') as string)
+    const aspectRatio = formData.get('aspectRatio') as string || '16:9'
 
     if (!protagonist || !story) {
       return new Response(JSON.stringify({ error: 'Missing data' }), { status: 400 })
@@ -90,10 +91,11 @@ export async function POST(request: Request) {
           },
           body: JSON.stringify({
             instances: [{
-              prompt: `Cinematic 16:9 scene: ${scene}\n\nIMPORTANT - Main character MUST have these EXACT facial features: ${face}\n\nStyle: photorealistic, cinematic lighting, high detail, consistent character appearance`
+              prompt: `Cinematic ${aspectRatio} scene: ${scene}\n\nIMPORTANT - Main character MUST have these EXACT facial features: ${face}\n\nStyle: photorealistic, cinematic lighting, high detail, consistent character appearance`
             }],
             parameters: {
-              sampleCount: 1
+              sampleCount: 1,
+              aspectRatio: aspectRatio
             }
           })
         }
