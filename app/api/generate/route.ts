@@ -49,52 +49,55 @@ export async function POST(request: Request) {
     const geminiData = await geminiRes.json()
     const face = geminiData.candidates[0].content.parts[0].text
 
-    // GPT-4
-    const gptRes = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-4',
-        messages: [{
-          role: 'user',
-          content: `Create ${sceneCount} scenes for: "${story}"\nPersona: ${persona}\n\nReturn JSON: {"scenes": [{"description": "..."}]}`
-        }],
-        response_format: { type: 'json_object' }
-      })
-    })
+    // Gemini 2.5 - Scene generation
+    const sceneRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Create ${sceneCount} detailed scene descriptions for this story: "${story}"\nPersona: ${persona}\n\nReturn only a JSON array: ["scene 1 description", "scene 2 description", ...]`
+            }]
+          }]
+        })
+      }
+    )
 
-    if (!gptRes.ok) {
-      const err = await gptRes.text()
-      return new Response(err, { status: gptRes.status })
+    if (!sceneRes.ok) {
+      const err = await sceneRes.text()
+      return new Response(err, { status: sceneRes.status })
     }
 
-    const gptData = await gptRes.json()
-    const scenes = JSON.parse(gptData.choices[0].message.content).scenes
+    const sceneData = await sceneRes.json()
+    const sceneText = sceneData.candidates[0].content.parts[0].text
+    const scenes = JSON.parse(sceneText.replace(/```json\n?|\n?```/g, ''))
 
-    // DALL-E 3
+    // Imagen 4 - Image generation
     const images: string[] = []
 
     for (const scene of scenes) {
-      const dalleRes = await fetch('https://api.openai.com/v1/images/generations', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'dall-e-3',
-          prompt: `${scene.description}\n\nCharacter: ${face}`,
-          size: '1792x1024',
-          quality: 'standard'
-        })
-      })
+      const imagenRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${process.env.VERTEX_AI_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            instances: [{
+              prompt: `${scene}\n\nCharacter: ${face}`
+            }],
+            parameters: {
+              numberOfImages: 1,
+              aspectRatio: '16:9'
+            }
+          })
+        }
+      )
 
-      if (dalleRes.ok) {
-        const data = await dalleRes.json()
-        images.push(data.data[0].url)
+      if (imagenRes.ok) {
+        const data = await imagenRes.json()
+        images.push(data.predictions[0].bytesBase64Encoded)
       }
     }
 
