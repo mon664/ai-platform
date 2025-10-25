@@ -93,10 +93,7 @@ export async function POST(request: Request) {
               prompt: `Cinematic 16:9 scene: ${scene}\n\nIMPORTANT - Main character MUST have these EXACT facial features: ${face}\n\nStyle: photorealistic, cinematic lighting, high detail, consistent character appearance`
             }],
             parameters: {
-              sampleCount: 1,
-              aspectRatio: '16:9',
-              safetySetting: 'block_low_and_above',
-              personGeneration: 'allow_adult'
+              sampleCount: 1
             }
           })
         }
