@@ -33,7 +33,7 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           contents: [{
             parts: [
-              { text: "Describe this person's face for image generation (100 words max):" },
+              { text: "Describe this person's facial features in extreme detail for AI image generation. Include: exact age, gender, ethnicity, skin tone, face shape, eye shape/color, eyebrow shape, nose shape, lip shape, facial hair (if any), hairstyle/color/length, distinctive features (moles, scars, etc). Be very specific and detailed (200 words):" },
               { inlineData: { mimeType: protagonist.type, data: base64 } }
             ]
           }]
@@ -90,11 +90,13 @@ export async function POST(request: Request) {
           },
           body: JSON.stringify({
             instances: [{
-              prompt: `${scene}\n\nCharacter: ${face}`
+              prompt: `Cinematic 16:9 scene: ${scene}\n\nIMPORTANT - Main character MUST have these EXACT facial features: ${face}\n\nStyle: photorealistic, cinematic lighting, high detail, consistent character appearance`
             }],
             parameters: {
               sampleCount: 1,
-              aspectRatio: '16:9'
+              aspectRatio: '16:9',
+              safetySetting: 'BLOCK_ONLY_HIGH',
+              personGeneration: 'ALLOW_ADULT'
             }
           })
         }
