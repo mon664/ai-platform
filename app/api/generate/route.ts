@@ -169,16 +169,16 @@ Style: Photorealistic, cinematic lighting, high detail, film quality.`
           }), { status: 500 })
         }
 
-        // Find the image part in the response
-        const imagePart = data.candidates[0].content.parts.find((part: any) => part.inline_data)
-        if (!imagePart?.inline_data?.data) {
+        // Find the image part in the response (note: camelCase inlineData)
+        const imagePart = data.candidates[0].content.parts.find((part: any) => part.inlineData)
+        if (!imagePart?.inlineData?.data) {
           return new Response(JSON.stringify({
             error: 'No image data in response',
             response: JSON.stringify(data).substring(0, 500)
           }), { status: 500 })
         }
 
-        const imageData = imagePart.inline_data.data
+        const imageData = imagePart.inlineData.data
         images.push(`data:image/png;base64,${imageData}`)
       } else {
         const errText = await nanoRes.text()
