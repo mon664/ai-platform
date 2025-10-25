@@ -8,7 +8,6 @@ export async function POST(request: Request) {
     const persona = formData.get('persona') as string || ''
     const sceneCount = parseInt(formData.get('sceneCount') as string)
     const aspectRatio = formData.get('aspectRatio') as string || '16:9'
-    const imageEngine = formData.get('imageEngine') as string || 'imagen'
 
     if (!protagonist || !story) {
       return new Response(JSON.stringify({ error: 'Missing data' }), { status: 400 })
@@ -121,84 +120,22 @@ Output: 250-300 words with numerical precision where possible.` },
     const scenes = JSON.parse(sceneText.replace(/```json\n?|\n?```/g, ''))
     console.log('[DEBUG] Scenes array:', scenes)
 
-    // Image generation - Choose engine
+    // Imagen 3.0 - Enhanced image generation with improved face consistency
     const images: string[] = []
+    console.log('[DEBUG] Using enhanced Imagen 3.0 with detailed face prompts')
 
-    if (imageEngine === 'vertex') {
-      // Vertex AI Subject Customization - Use reference image
-      console.log('[DEBUG] Using Vertex AI Subject Customization')
-
-      for (const scene of scenes) {
-        const vertexRes = await fetch(
-          `https://${process.env.VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${process.env.VERTEX_PROJECT_ID}/locations/${process.env.VERTEX_LOCATION}/publishers/google/models/imagen-3.0-capability-001:predict`,
-          {
-            method: 'POST',
-            headers: {
-              'x-goog-api-key': process.env.VERTEX_AI_KEY as string,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              instances: [{
-                prompt: `${scene}. Main character is [1]. Style: Cinematic ${aspectRatio}, photorealistic, professional lighting, high detail, film quality.`,
-                referenceImages: [{
-                  referenceType: 'REFERENCE_TYPE_SUBJECT',
-                  referenceId: 1,
-                  referenceImage: {
-                    bytesBase64Encoded: base64
-                  },
-                  subjectImageConfig: {
-                    subjectDescription: face,
-                    subjectType: 'SUBJECT_TYPE_PERSON'
-                  }
-                }]
-              }],
-              parameters: {
-                sampleCount: 1,
-                aspectRatio: aspectRatio
-              }
-            })
-          }
-        )
-
-        if (vertexRes.ok) {
-          const data = await vertexRes.json()
-          console.log('[DEBUG] Vertex AI response:', JSON.stringify(data).substring(0, 500))
-
-          if (!data.predictions || !data.predictions[0]?.bytesBase64Encoded) {
-            return new Response(JSON.stringify({
-              error: 'Invalid Vertex AI response',
-              response: JSON.stringify(data).substring(0, 500)
-            }), { status: 500 })
-          }
-
-          const imageData = data.predictions[0].bytesBase64Encoded
-          images.push(`data:image/png;base64,${imageData}`)
-        } else {
-          const errText = await vertexRes.text()
-          console.error('[ERROR] Vertex AI failed:', errText)
-          return new Response(JSON.stringify({
-            error: 'Vertex AI failed',
-            status: vertexRes.status,
-            details: errText.substring(0, 500)
-          }), { status: 500 })
-        }
-      }
-    } else {
-      // Imagen 3.0 - Standard generation
-      console.log('[DEBUG] Using standard Imagen 3.0')
-
-      for (const scene of scenes) {
-        const imagenRes = await fetch(
-          'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict',
-          {
-            method: 'POST',
-            headers: {
-              'x-goog-api-key': process.env.GEMINI_API_KEY as string,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              instances: [{
-                prompt: `${scene}
+    for (const scene of scenes) {
+      const imagenRes = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict',
+        {
+          method: 'POST',
+          headers: {
+            'x-goog-api-key': process.env.GEMINI_API_KEY as string,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            instances: [{
+              prompt: `${scene}
 
 CRITICAL CHARACTER REQUIREMENTS - DO NOT DEVIATE:
 The main character MUST have these EXACT facial features with 100% accuracy:
@@ -216,37 +153,36 @@ STRICT GUIDELINES:
 Style: Cinematic ${aspectRatio}, photorealistic, professional lighting, high detail, film quality, consistent character identity across all frames
 
 Negative prompt: different face, altered features, inconsistent appearance, wrong eye color, different hairstyle, changed facial structure`
-              }],
-              parameters: {
-                sampleCount: 1,
-                aspectRatio: aspectRatio
-              }
-            })
-          }
-        )
+            }],
+            parameters: {
+              sampleCount: 1,
+              aspectRatio: aspectRatio
+            }
+          })
+        }
+      )
 
-        if (imagenRes.ok) {
-          const data = await imagenRes.json()
-          console.log('[DEBUG] Image generation response:', JSON.stringify(data).substring(0, 500))
+      if (imagenRes.ok) {
+        const data = await imagenRes.json()
+        console.log('[DEBUG] Image generation response:', JSON.stringify(data).substring(0, 500))
 
-          if (!data.predictions || !data.predictions[0]?.bytesBase64Encoded) {
-            return new Response(JSON.stringify({
-              error: 'Invalid image response',
-              response: JSON.stringify(data).substring(0, 500)
-            }), { status: 500 })
-          }
-
-          const imageData = data.predictions[0].bytesBase64Encoded
-          images.push(`data:image/png;base64,${imageData}`)
-        } else {
-          const errText = await imagenRes.text()
-          console.error('[ERROR] Image generation failed:', errText)
+        if (!data.predictions || !data.predictions[0]?.bytesBase64Encoded) {
           return new Response(JSON.stringify({
-            error: 'Image API failed',
-            status: imagenRes.status,
-            details: errText.substring(0, 500)
+            error: 'Invalid image response',
+            response: JSON.stringify(data).substring(0, 500)
           }), { status: 500 })
         }
+
+        const imageData = data.predictions[0].bytesBase64Encoded
+        images.push(`data:image/png;base64,${imageData}`)
+      } else {
+        const errText = await imagenRes.text()
+        console.error('[ERROR] Image generation failed:', errText)
+        return new Response(JSON.stringify({
+          error: 'Image API failed',
+          status: imagenRes.status,
+          details: errText.substring(0, 500)
+        }), { status: 500 })
       }
     }
 
