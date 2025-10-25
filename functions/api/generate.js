@@ -1,15 +1,9 @@
-// Cloudflare Pages Function
-// URL: /api/generate
+// Cloudflare Pages Function for AI Story Generation
 
-interface Env {
-  OPENAI_API_KEY: string
-  GEMINI_API_KEY: string
-}
-
-export async function onRequestPost(context: { request: Request; env: Env }) {
+export async function onRequestPost(context) {
   const { request, env } = context
 
-  // 환경 변수 검증
+  // Validate environment variables
   if (!env.OPENAI_API_KEY) {
     return new Response(
       JSON.stringify({ error: 'Missing OPENAI_API_KEY' }),
@@ -26,10 +20,10 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
   try {
     const formData = await request.formData()
-    const protagonist = formData.get('protagonist') as File
-    const story = formData.get('story') as string
-    const persona = formData.get('persona') as string || ''
-    const sceneCount = parseInt(formData.get('sceneCount') as string)
+    const protagonist = formData.get('protagonist')
+    const story = formData.get('story')
+    const persona = formData.get('persona') || ''
+    const sceneCount = parseInt(formData.get('sceneCount'))
 
     if (!protagonist || !story) {
       return new Response(
@@ -38,7 +32,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       )
     }
 
-    // Step 1: Gemini Vision - 얼굴 분석
+    // Step 1: Gemini Vision - Analyze face
     const protagonistBytes = await protagonist.arrayBuffer()
     const protagonistBase64 = btoa(
       String.fromCharCode(...new Uint8Array(protagonistBytes))
@@ -54,7 +48,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
             {
               parts: [
                 {
-                  text: "Describe this person's face in detail for image generation: facial structure, hair, eyes, distinctive features. Keep it under 100 words."
+                  text: "Describe this person's face for image generation: facial features, hair, eyes. Keep it under 100 words."
                 },
                 {
                   inlineData: {
@@ -72,7 +66,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     if (!geminiResponse.ok) {
       const error = await geminiResponse.text()
       return new Response(
-        JSON.stringify({ error: 'Gemini Vision failed', details: error }),
+        JSON.stringify({ error: 'Gemini API failed', details: error }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       )
     }
@@ -80,21 +74,8 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     const geminiData = await geminiResponse.json()
     const faceFeatures = geminiData.candidates[0].content.parts[0].text
 
-    // Step 2: GPT-4 - 장면 분할
-    const scenePrompt = `Create exactly ${sceneCount} scenes for this story: "${story}"
-
-AI Persona: ${persona || 'neutral storyteller'}
-
-Return a JSON object with this exact format:
-{
-  "scenes": [
-    {"description": "detailed scene description 1"},
-    {"description": "detailed scene description 2"},
-    ...
-  ]
-}
-
-Each description should be vivid and detailed for image generation.`
+    // Step 2: GPT-4 - Create scenes
+    const scenePrompt = `Create ${sceneCount} scenes for: "${story}"\nAI Persona: ${persona}\n\nReturn JSON: {"scenes": [{"description": "..."}]}`
 
     const gptResponse = await fetch(
       'https://api.openai.com/v1/chat/completions',
@@ -124,13 +105,11 @@ Each description should be vivid and detailed for image generation.`
     const sceneData = JSON.parse(gptData.choices[0].message.content)
     const sceneDescriptions = sceneData.scenes || []
 
-    // Step 3: DALL-E 3 - 이미지 생성
-    const sceneUrls: string[] = []
+    // Step 3: DALL-E 3 - Generate images
+    const sceneUrls = []
 
     for (const scene of sceneDescriptions) {
-      const imagePrompt = `${scene.description}
-
-Character appearance: ${faceFeatures}`
+      const imagePrompt = `${scene.description}\n\nCharacter: ${faceFeatures}`
 
       const dalleResponse = await fetch(
         'https://api.openai.com/v1/images/generations',
@@ -150,24 +129,20 @@ Character appearance: ${faceFeatures}`
         }
       )
 
-      if (!dalleResponse.ok) {
-        const error = await dalleResponse.text()
-        console.error('DALL-E error:', error)
-        continue // Skip failed images
+      if (dalleResponse.ok) {
+        const dalleData = await dalleResponse.json()
+        sceneUrls.push(dalleData.data[0].url)
       }
-
-      const dalleData = await dalleResponse.json()
-      sceneUrls.push(dalleData.data[0].url)
     }
 
     return new Response(
       JSON.stringify({ scenes: sceneUrls }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      { headers: { 'Content-Type': 'application/json' } }
     )
 
-  } catch (error: any) {
+  } catch (error) {
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || 'Server error' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }
