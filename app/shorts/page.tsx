@@ -137,16 +137,25 @@ export default function ShortsPage() {
           voice: ttsVoice,
           speed: ttsSpeed,
           pitch: ttsPitch,
-          tone: ttsTone, // Pass SSML content
+          tone: ttsTone,
         }),
       });
       if (!res.ok) {
         const errData = await res.json();
         throw new Error(errData.error || '음성 생성 실패');
       }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      setResult(prev => prev ? { ...prev, audioUrl: url } : null);
+      const data = await res.json();
+
+      if (data.audioContents && data.audioContents.length > 0) {
+        console.log(`음성 파일이 ${data.audioContents.length}개 생성되었습니다. 첫 번째 파일만 우선 재생합니다.`);
+        const firstAudioBase64 = data.audioContents[0];
+        const audioBlob = await (await fetch(`data:audio/wav;base64,${firstAudioBase64}`)).blob();
+        const url = URL.createObjectURL(audioBlob);
+        setResult(prev => prev ? { ...prev, audioUrl: url } : null);
+      } else {
+        throw new Error('생성된 음성 데이터가 없습니다.');
+      }
+
     } catch (err: any) {
       setError(err.message || '음성 생성 중 오류가 발생했습니다.');
     } finally {
