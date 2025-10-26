@@ -55,17 +55,17 @@ export default function ShortsPage() {
   }
 
   const generateShorts = async () => {
-    const input = mode === 'keyword' ? keyword : prompt
+    const input = mode === 'keyword' ? keyword : prompt;
 
     if (!input.trim()) {
-      setError(mode === 'keyword' ? '키워드를 입력해주세요' : '프롬프트를 입력해주세요')
-      return
+      setError(mode === 'keyword' ? '키워드를 입력해주세요' : '프롬프트를 입력해주세요');
+      return;
     }
 
-    setLoading(true)
-    setError('')
-    setResult(null)
-    setProgress('대본 생성 중...')
+    setLoading(true);
+    setError('');
+    setResult(null);
+    setProgress('쇼츠 생성 중... 잠시만 기다려주세요.'); // A single progress message
 
     try {
       const res = await fetch('/api/shorts', {
@@ -75,71 +75,31 @@ export default function ShortsPage() {
           mode,
           input,
           duration,
-          sceneCount
-        })
-      })
+          sceneCount,
+        }),
+      });
 
-      if (!res.ok) throw new Error('쇼츠 생성 실패')
-
-      const reader = res.body?.getReader()
-      const decoder = new TextDecoder()
-
-      if (!reader) throw new Error('스트림을 읽을 수 없습니다')
-
-      let resultData: ShortsResult = { script: '', audioUrl: '', images: [] }
-      const imageChunks: { [key: number]: { mime: string, chunks: string[] } } = {}
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n')
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6))
-
-              if (data.error) {
-                throw new Error(data.error)
-              }
-              if (data.progress) {
-                setProgress(data.progress)
-              }
-              if (data.script) {
-                resultData.script = data.script
-              }
-              if (data.imageChunk) {
-                const idx = data.imageIndex
-                if (!imageChunks[idx]) {
-                  imageChunks[idx] = { mime: data.mimeType, chunks: [] }
-                }
-                imageChunks[idx].chunks.push(data.imageChunk)
-                if (data.isLastChunk) {
-                  const fullB64 = imageChunks[idx].chunks.join('')
-                  const imageUrl = `data:${imageChunks[idx].mime};base64,${fullB64}`
-                  resultData.images[idx] = imageUrl
-                  setResult({ ...resultData })
-                }
-              }
-              if (data.complete) {
-                setResult({ ...resultData })
-              }
-            } catch (e) {
-              console.error('Parse error:', e, line)
-            }
-          }
-        }
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || '쇼츠 생성에 실패했습니다.');
       }
 
+      const data = await res.json();
+      
+      // The new API returns a script and an array of images
+      setResult({
+        script: data.script,
+        images: data.images,
+        audioUrl: '', // audioUrl is not part of this API response
+      });
+
     } catch (err: any) {
-      setError(err.message || '오류가 발생했습니다')
+      setError(err.message || '오류가 발생했습니다');
     } finally {
-      setLoading(false)
-      setProgress('')
+      setLoading(false);
+      setProgress('');
     }
-  }
+  };
 
   const downloadAll = () => {
     // 대본 다운로드
