@@ -63,28 +63,35 @@ export default function ShortsPage() {
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
-            const data = JSON.parse(line.slice(6))
+            try {
+              const data = JSON.parse(line.slice(6))
 
-            if (data.progress) {
-              setProgress(data.progress)
-            }
-            if (data.script) {
-              resultData.script = data.script
-            }
-            if (data.imageChunk) {
-              const idx = data.imageIndex
-              if (!imageChunks[idx]) {
-                imageChunks[idx] = { mime: data.mimeType, chunks: [] }
+              if (data.error) {
+                throw new Error(data.error)
               }
-              imageChunks[idx].chunks.push(data.imageChunk)
-              if (data.isLastChunk) {
-                const fullB64 = imageChunks[idx].chunks.join('')
-                const imageUrl = `data:${imageChunks[idx].mime};base64,${fullB64}`
-                resultData.images.push(imageUrl)
+              if (data.progress) {
+                setProgress(data.progress)
               }
-            }
-            if (data.complete) {
-              setResult(resultData)
+              if (data.script) {
+                resultData.script = data.script
+              }
+              if (data.imageChunk) {
+                const idx = data.imageIndex
+                if (!imageChunks[idx]) {
+                  imageChunks[idx] = { mime: data.mimeType, chunks: [] }
+                }
+                imageChunks[idx].chunks.push(data.imageChunk)
+                if (data.isLastChunk) {
+                  const fullB64 = imageChunks[idx].chunks.join('')
+                  const imageUrl = `data:${imageChunks[idx].mime};base64,${fullB64}`
+                  resultData.images.push(imageUrl)
+                }
+              }
+              if (data.complete) {
+                setResult(resultData)
+              }
+            } catch (e) {
+              console.error('Parse error:', e, line)
             }
           }
         }
