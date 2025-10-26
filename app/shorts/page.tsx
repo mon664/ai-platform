@@ -356,6 +356,23 @@ export default function ShortsPage() {
                 <p className="whitespace-pre-wrap bg-gray-700 p-4 rounded">{result.script}</p>
               </div>
 
+              {result.images.length > 0 && (
+                <div className="bg-gray-800 rounded-lg p-6">
+                  <h2 className="text-2xl font-bold mb-4">장면 이미지 ({result.images.length}개)</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {result.images.map((img, i) => (
+                      <div key={i} className="relative group">
+                        <img src={img} alt={`Scene ${i + 1}`} className="w-full rounded-lg" />
+                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => openEditor(i)} className="text-white font-bold py-2 px-4 rounded bg-purple-600 hover:bg-purple-700">자막 편집</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* TTS Controls */}
               <div className="bg-gray-800 rounded-lg p-6">
                 <h2 className="text-2xl font-bold mb-4">음성 설정</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -394,22 +411,6 @@ export default function ShortsPage() {
                 <div className="bg-gray-800 rounded-lg p-6">
                   <h2 className="text-2xl font-bold mb-4">생성된 음성</h2>
                   <audio controls className="w-full" src={result.audioUrl} />
-                </div>
-              )}
-
-              {result.images.length > 0 && (
-                <div className="bg-gray-800 rounded-lg p-6">
-                  <h2 className="text-2xl font-bold mb-4">장면 이미지 ({result.images.length}개)</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {result.images.map((img, i) => (
-                      <div key={i} className="relative group">
-                        <img src={img} alt={`Scene ${i + 1}`} className="w-full rounded-lg" />
-                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => openEditor(i)} className="text-white font-bold py-2 px-4 rounded bg-purple-600 hover:bg-purple-700">자막 편집</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               )}
 
