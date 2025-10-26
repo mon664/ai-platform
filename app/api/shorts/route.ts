@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     for (let i = 0; i < sceneCount; i++) {
       const scenePart = Math.floor(script.length / sceneCount)
       const sceneText = script.substring(i * scenePart, (i + 1) * scenePart)
-      const imagePrompt = `Scene ${i + 1} for the script: "${sceneText.substring(0, 100)}...". Create a high-quality, cinematic, visually appealing image for a YouTube Short (9:16 aspect ratio). Style: modern, colorful, engaging.`
+      const imagePrompt = `Scene ${i + 1} for the script: "${sceneText.substring(0, 100)}...". Create a high-quality, cinematic image featuring a KOREAN person in a setting appropriate for South Korea. The image should be visually appealing, professional, and suitable for a YouTube Short (9:16 aspect ratio). Style: modern, colorful, engaging.`
 
       const imageRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_API_KEY}`,
