@@ -109,7 +109,6 @@ export default function ShortsPage() {
     }
   };
 
-  // Effect to draw on canvas when editor values change
   useEffect(() => {
     if (isEditorOpen && editingImageIndex !== null && result) {
       const canvas = canvasRef.current;
@@ -124,14 +123,12 @@ export default function ShortsPage() {
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
 
-        // Text settings
         ctx.font = `bold ${fontSize}px ${fontFamily}`;
         ctx.fillStyle = fontColor;
         ctx.strokeStyle = 'black';
         ctx.lineWidth = fontSize / 8;
         ctx.textAlign = 'center';
 
-        // Simple text wrapping
         const lines = [];
         const words = subtitleText.split(' ');
         let currentLine = words[0] || '';
@@ -181,7 +178,6 @@ export default function ShortsPage() {
 
   const navigateEditor = (direction: 'next' | 'prev') => {
     if (editingImageIndex === null || !result) return;
-    // Before navigating, save current state to the main result array
     if (canvasRef.current) {
       const newDataUrl = canvasRef.current.toDataURL('image/png');
       const newImages = [...result.images];
@@ -217,15 +213,114 @@ export default function ShortsPage() {
     <div className="min-h-screen bg-gradient-to-br from-pink-900 to-gray-900 text-white">
       <Navigation />
       <div className="p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* ... Form UI ... */}
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-4xl font-bold mb-2 text-center">YouTube 쇼츠 자동 생성기</h1>
+          <p className="text-gray-400 text-center mb-8">AI가 대본과 장면 이미지를 자동으로 생성</p>
 
-        {result && (
-          <div className="space-y-6">
-            {/* ... Script and Image display ... */}
+          <div className="bg-gray-800 rounded-lg p-6 mb-6">
+            <label className="block text-lg font-semibold mb-3">생성 모드</label>
+            <div className="grid grid-cols-2 gap-4">
+              <button onClick={() => setMode('keyword')} className={`p-4 rounded-lg font-semibold transition-colors ${mode === 'keyword' ? 'bg-pink-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
+                🔑 키워드 모드
+                <p className="text-sm font-normal mt-1">간단한 주제로 자동 생성</p>
+              </button>
+              <button onClick={() => setMode('prompt')} className={`p-4 rounded-lg font-semibold transition-colors ${mode === 'prompt' ? 'bg-pink-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
+                ✍️ 프롬프트 모드
+                <p className="text-sm font-normal mt-1">상세한 대본/시나리오 입력</p>
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+
+          <div className="bg-gray-800 rounded-lg p-6 mb-6">
+            {mode === 'keyword' ? (
+              <>
+                <label className="block text-lg font-semibold mb-3">키워드</label>
+                <input type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="예: 고구마의 효능, 우주의 신비, AI의 미래" className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-pink-500" />
+                <p className="text-sm text-gray-400 mt-2">간단한 주제를 입력하면 AI가 자동으로 대본을 생성합니다</p>
+                <button onClick={improveInput} disabled={improving} className="w-full mt-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                  {improving ? 'AI 개선 중...' : '🤖 AI로 키워드 개선하기'}
+                </button>
+              </>
+            ) : (
+              <>
+                <label className="block text-lg font-semibold mb-3">상세 프롬프트</label>
+                <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="예: 고구마의 5가지 건강 효능에 대해 설명하는 영상을 만들어줘..." className="w-full h-32 bg-gray-700 text-white rounded-lg p-4 resize-none focus:outline-none focus:ring-2 focus:ring-pink-500" />
+                <p className="text-sm text-gray-400 mt-2">상세한 대본이나 시나리오를 입력하면 더 정확한 결과를 얻을 수 있습니다</p>
+                <button onClick={improveInput} disabled={improving} className="w-full mt-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                  {improving ? 'AI 개선 중...' : '🤖 AI로 프롬프트 개선하기'}
+                </button>
+              </>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="bg-gray-800 rounded-lg p-6">
+              <label className="block text-lg font-semibold mb-3">영상 길이</label>
+              <select value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                <option value={30}>30초</option>
+                <option value={45}>45초</option>
+                <option value={60}>60초 (1분)</option>
+              </select>
+            </div>
+            <div className="bg-gray-800 rounded-lg p-6">
+              <label className="block text-lg font-semibold mb-3">장면 수</label>
+              <select value={sceneCount} onChange={(e) => setSceneCount(Number(e.target.value))} className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                {[3, 4, 5, 6, 7, 8].map(n => (<option key={n} value={n}>{n}개</option>))}
+              </select>
+            </div>
+            <div className="bg-gray-800 rounded-lg p-6">
+              <label className="block text-lg font-semibold mb-3">이미지 스타일</label>
+              <select value={imageStyle} onChange={(e) => setImageStyle(e.target.value)} className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                <option value="photorealistic">실사</option>
+                <option value="anime">애니메이션</option>
+                <option value="3d-render">3D 렌더</option>
+                <option value="fantasy-art">판타지 아트</option>
+                <option value="cinematic">영화처럼</option>
+              </select>
+            </div>
+          </div>
+
+          <button onClick={generateShorts} disabled={loading} className="w-full bg-pink-600 hover:bg-pink-700 disabled:bg-gray-600 text-white font-bold py-4 px-6 rounded-lg text-xl transition-colors mb-6">
+            {loading ? progress || '생성 중...' : '쇼츠 자동 생성하기'}
+          </button>
+
+          {error && (<div className="bg-red-900/50 border border-red-500 rounded-lg p-4 mb-6"><p className="text-red-200">{error}</p></div>)}
+
+          {result && (
+            <div className="space-y-6">
+              <div className="bg-gray-800 rounded-lg p-6">
+                <h2 className="text-2xl font-bold mb-4">생성된 대본</h2>
+                <p className="whitespace-pre-wrap bg-gray-700 p-4 rounded">{result.script}</p>
+              </div>
+
+              {result.images.length > 0 && (
+                <div className="bg-gray-800 rounded-lg p-6">
+                  <h2 className="text-2xl font-bold mb-4">장면 이미지 ({result.images.length}개)</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {result.images.map((img, i) => (
+                      <div key={i} className="relative group">
+                        <img src={img} alt={`Scene ${i + 1}`} className="w-full rounded-lg" />
+                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => openEditor(i)} className="text-white font-bold py-2 px-4 rounded bg-purple-600 hover:bg-purple-700">자막 편집</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-4">
+                 <button onClick={downloadAll} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                  모든 파일 다운로드
+                </button>
+              </div>
+
+              <p className="text-sm text-gray-400 text-center">
+                💡 생성된 이미지와 음성을 영상 편집 프로그램에서 합성하여 쇼츠를 완성하세요
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Editor Modal */}
