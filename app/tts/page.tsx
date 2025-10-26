@@ -20,6 +20,7 @@ export default function TTSPage() {
   const [error, setError] = useState('')
   const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([])
   const [isPlaying, setIsPlaying] = useState(false)
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
 
   useEffect(() => {
     const loadVoices = () => {
@@ -104,6 +105,45 @@ export default function TTSPage() {
   const stopTTS = () => {
     window.speechSynthesis.cancel()
     setIsPlaying(false)
+  }
+
+  const generateTTSWav = async (speakerNum: 1 | 2) => {
+    const speaker = speakerNum === 1 ? speaker1 : speaker2
+    const text = speaker.improvedText || speaker.text
+
+    if (!text.trim()) {
+      setError('텍스트를 입력해주세요')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const res = await fetch('/api/tts/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice: speaker.voice, speed, pitch })
+      })
+
+      if (!res.ok) throw new Error('음성 생성 실패')
+
+      const blob = await res.blob()
+      setAudioBlob(blob)
+    } catch (err: any) {
+      setError(err.message || '오류가 발생했습니다')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const downloadWav = () => {
+    if (!audioBlob) return
+    const url = URL.createObjectURL(audioBlob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `tts-${Date.now()}.wav`
+    a.click()
   }
 
   return (
@@ -345,6 +385,38 @@ export default function TTSPage() {
           </div>
         </div>
 
+        {/* WAV 생성 (현재 브라우저 TTS는 WAV 추출 불가) */}
+        <div className="bg-gray-800 rounded-lg p-6 mb-6">
+          <h3 className="text-lg font-bold mb-4">WAV 파일 생성</h3>
+          <p className="text-sm text-gray-400 mb-4">
+            ⚠️ 브라우저 TTS는 WAV 파일 추출이 불가능합니다. Google Cloud TTS API가 필요합니다.
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => generateTTSWav(1)}
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-bold py-3 rounded-lg"
+            >
+              화자 1 WAV 생성
+            </button>
+            <button
+              onClick={() => generateTTSWav(2)}
+              disabled={loading || !useTwoSpeakers}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-bold py-3 rounded-lg"
+            >
+              화자 2 WAV 생성
+            </button>
+          </div>
+          {audioBlob && (
+            <button
+              onClick={downloadWav}
+              className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg"
+            >
+              📥 WAV 다운로드
+            </button>
+          )}
+        </div>
+
         {/* 에러 */}
         {error && (
           <div className="bg-red-900/50 border border-red-500 rounded-lg p-4 mb-6">
@@ -353,7 +425,8 @@ export default function TTSPage() {
         )}
 
         <p className="text-sm text-gray-400 text-center mt-6">
-          💡 AI가 대본을 개선한 후 브라우저 TTS로 음성 재생 • Chrome 권장
+          💡 브라우저 TTS = 시스템 음성만 지원 (Google, Microsoft 등)<br/>
+          💡 Google Cloud TTS API = 별도 인증 필요 (Zephyr, Schedar 등)
         </p>
       </div>
       </div>
