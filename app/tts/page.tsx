@@ -6,12 +6,13 @@ interface Speaker {
   text: string
   improvedText: string
   voice: string
+  cloudVoice: string
   tone: string
 }
 
 export default function TTSPage() {
-  const [speaker1, setSpeaker1] = useState<Speaker>({ text: '', improvedText: '', voice: '', tone: '' })
-  const [speaker2, setSpeaker2] = useState<Speaker>({ text: '', improvedText: '', voice: '', tone: '' })
+  const [speaker1, setSpeaker1] = useState<Speaker>({ text: '', improvedText: '', voice: '', cloudVoice: 'ko-KR-Neural2-A', tone: '' })
+  const [speaker2, setSpeaker2] = useState<Speaker>({ text: '', improvedText: '', voice: '', cloudVoice: 'ko-KR-Neural2-B', tone: '' })
   const [useTwoSpeakers, setUseTwoSpeakers] = useState(false)
   const [speed, setSpeed] = useState(1.0)
   const [pitch, setPitch] = useState(1.0)
@@ -123,10 +124,13 @@ export default function TTSPage() {
       const res = await fetch('/api/tts/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voice: speaker.voice, speed, pitch })
+        body: JSON.stringify({ text, voice: speaker.cloudVoice, speed, pitch })
       })
 
-      if (!res.ok) throw new Error('음성 생성 실패')
+      if (!res.ok) {
+        const errData = await res.json()
+        throw new Error(errData.error || '음성 생성 실패')
+      }
 
       const blob = await res.blob()
       setAudioBlob(blob)
@@ -180,9 +184,9 @@ export default function TTSPage() {
             maxLength={5000}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
             <div>
-              <label className="block text-sm font-semibold mb-2">음성</label>
+              <label className="block text-sm font-semibold mb-2">브라우저 음성 (재생용)</label>
               <select
                 value={speaker1.voice}
                 onChange={(e) => setSpeaker1({ ...speaker1, voice: e.target.value })}
@@ -192,6 +196,33 @@ export default function TTSPage() {
                 {browserVoices.map(v => (
                   <option key={v.name} value={v.name}>{v.name}</option>
                 ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2">Cloud TTS 음성 (WAV용)</label>
+              <select
+                value={speaker1.cloudVoice}
+                onChange={(e) => setSpeaker1({ ...speaker1, cloudVoice: e.target.value })}
+                className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <optgroup label="Neural2 (고품질)">
+                  <option value="ko-KR-Neural2-A">Neural2-A (여성)</option>
+                  <option value="ko-KR-Neural2-B">Neural2-B (여성)</option>
+                  <option value="ko-KR-Neural2-C">Neural2-C (남성)</option>
+                </optgroup>
+                <optgroup label="Wavenet (자연스러움)">
+                  <option value="ko-KR-Wavenet-A">Wavenet-A (여성)</option>
+                  <option value="ko-KR-Wavenet-B">Wavenet-B (여성)</option>
+                  <option value="ko-KR-Wavenet-C">Wavenet-C (남성)</option>
+                  <option value="ko-KR-Wavenet-D">Wavenet-D (남성)</option>
+                </optgroup>
+                <optgroup label="Standard (기본)">
+                  <option value="ko-KR-Standard-A">Standard-A (여성)</option>
+                  <option value="ko-KR-Standard-B">Standard-B (여성)</option>
+                  <option value="ko-KR-Standard-C">Standard-C (남성)</option>
+                  <option value="ko-KR-Standard-D">Standard-D (남성)</option>
+                </optgroup>
               </select>
             </div>
 
@@ -267,9 +298,9 @@ export default function TTSPage() {
               maxLength={5000}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
               <div>
-                <label className="block text-sm font-semibold mb-2">음성</label>
+                <label className="block text-sm font-semibold mb-2">브라우저 음성 (재생용)</label>
                 <select
                   value={speaker2.voice}
                   onChange={(e) => setSpeaker2({ ...speaker2, voice: e.target.value })}
@@ -279,6 +310,33 @@ export default function TTSPage() {
                   {browserVoices.map(v => (
                     <option key={v.name} value={v.name}>{v.name}</option>
                   ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Cloud TTS 음성 (WAV용)</label>
+                <select
+                  value={speaker2.cloudVoice}
+                  onChange={(e) => setSpeaker2({ ...speaker2, cloudVoice: e.target.value })}
+                  className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <optgroup label="Neural2 (고품질)">
+                    <option value="ko-KR-Neural2-A">Neural2-A (여성)</option>
+                    <option value="ko-KR-Neural2-B">Neural2-B (여성)</option>
+                    <option value="ko-KR-Neural2-C">Neural2-C (남성)</option>
+                  </optgroup>
+                  <optgroup label="Wavenet (자연스러움)">
+                    <option value="ko-KR-Wavenet-A">Wavenet-A (여성)</option>
+                    <option value="ko-KR-Wavenet-B">Wavenet-B (여성)</option>
+                    <option value="ko-KR-Wavenet-C">Wavenet-C (남성)</option>
+                    <option value="ko-KR-Wavenet-D">Wavenet-D (남성)</option>
+                  </optgroup>
+                  <optgroup label="Standard (기본)">
+                    <option value="ko-KR-Standard-A">Standard-A (여성)</option>
+                    <option value="ko-KR-Standard-B">Standard-B (여성)</option>
+                    <option value="ko-KR-Standard-C">Standard-C (남성)</option>
+                    <option value="ko-KR-Standard-D">Standard-D (남성)</option>
+                  </optgroup>
                 </select>
               </div>
 
