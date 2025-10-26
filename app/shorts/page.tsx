@@ -31,6 +31,7 @@ export default function ShortsPage() {
   const [result, setResult] = useState<ShortsResult | null>(null)
   const [error, setError] = useState('')
   const [improving, setImproving] = useState(false)
+  const [protagonistImage, setProtagonistImage] = useState<File | null>(null)
 
   // Editor State
   const [isEditorOpen, setIsEditorOpen] = useState(false)
@@ -69,45 +70,99 @@ export default function ShortsPage() {
     }
   }
 
-  const generateShorts = async () => {
-    const input = mode === 'keyword' ? keyword : prompt;
-    if (!input.trim()) {
-      setError(mode === 'keyword' ? '키워드를 입력해주세요' : '프롬프트를 입력해주세요');
-      return;
-    }
-    setLoading(true);
-    setError('');
-    setResult(null);
-    setProgress('쇼츠 생성 중... 잠시만 기다려주세요.');
-    try {
-      const res = await fetch('/api/shorts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode,
-          input,
-          duration,
-          sceneCount,
-          imageStyle,
-        }),
-      });
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || '쇼츠 생성에 실패했습니다.');
+    const generateShorts = async () => {
+
+      const input = mode === 'keyword' ? keyword : prompt;
+
+      if (!input.trim()) {
+
+        setError(mode === 'keyword' ? '키워드를 입력해주세요' : '프롬프트를 입력해주세요');
+
+        return;
+
       }
-      const data = await res.json();
-      setResult({
-        script: data.script,
-        images: data.images,
-        audioUrl: '', 
-      });
-    } catch (err: any) {
-      setError(err.message || '오류가 발생했습니다');
-    } finally {
-      setLoading(false);
-      setProgress('');
-    }
-  };
+
+  
+
+      setLoading(true);
+
+      setError('');
+
+      setResult(null);
+
+      setProgress('쇼츠 생성 중... 잠시만 기다려주세요.');
+
+  
+
+      try {
+
+        const formData = new FormData();
+
+        formData.append('mode', mode);
+
+        formData.append('input', input);
+
+        formData.append('duration', String(duration));
+
+        formData.append('sceneCount', String(sceneCount));
+
+        formData.append('imageStyle', imageStyle);
+
+        if (protagonistImage) {
+
+          formData.append('protagonistImage', protagonistImage);
+
+        }
+
+  
+
+        const res = await fetch('/api/shorts', {
+
+          method: 'POST',
+
+          body: formData,
+
+        });
+
+  
+
+        if (!res.ok) {
+
+          const errData = await res.json();
+
+          throw new Error(errData.error || '쇼츠 생성에 실패했습니다.');
+
+        }
+
+  
+
+        const data = await res.json();
+
+        setResult({
+
+          script: data.script,
+
+          images: data.images,
+
+          audioUrl: '', 
+
+        });
+
+  
+
+      } catch (err: any) {
+
+        setError(err.message || '오류가 발생했습니다');
+
+      } finally {
+
+        setLoading(false);
+
+        setProgress('');
+
+      }
+
+    };
 
   useEffect(() => {
     if (isEditorOpen && editingImageIndex !== null && result) {
@@ -251,10 +306,21 @@ export default function ShortsPage() {
                 </button>
               </>
             )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div className="bg-gray-800 rounded-lg p-6">
+                  </div>
+          
+                  {/* 주인공 사진 업로드 */}
+                  <div className="bg-gray-800 rounded-lg p-6 mb-6">
+                    <label className="block text-lg font-semibold mb-3">주인공 사진 (선택 사항)</label>
+                    <input
+                      type="file"
+                      accept="image/png, image/jpeg"
+                      onChange={(e) => setProtagonistImage(e.target.files ? e.target.files[0] : null)}
+                      className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-600 file:text-white hover:file:bg-pink-700"
+                    />
+                    <p className="text-sm text-gray-400 mt-2">주인공 사진을 업로드하면, 모든 장면에 얼굴이 일관성 있게 유지됩니다.</p>
+                  </div>
+          
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">            <div className="bg-gray-800 rounded-lg p-6">
               <label className="block text-lg font-semibold mb-3">영상 길이</label>
               <select value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-pink-500">
                 <option value={30}>30초</option>
