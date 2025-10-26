@@ -381,10 +381,11 @@ export default function ShortsPage() {
             {/* 액션 버튼 */}
             <div className="flex gap-4">
               <button
-                onClick={addSubtitles}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+                onClick={() => addSubtitles()}
+                disabled={loading}
+                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
               >
-                자막 추가하기
+                {loading && progress === '자막 추가 중...' ? '처리 중...' : '자막 추가하기'}
               </button>
               <button
                 onClick={downloadAll}
