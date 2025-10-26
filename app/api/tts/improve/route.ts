@@ -15,16 +15,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'API 키가 설정되지 않았습니다' }, { status: 500 })
     }
 
-    // Gemini로 대본 개선
-    const prompt = tone
-      ? `Improve the following Korean text for voice narration with a "${tone}" tone. Make it more natural and engaging for audio. Keep it in Korean. Return ONLY the improved text, nothing else.
+    const prompt = `Improve the following Korean text for voice narration with this voice identity:
 
-Original:
-${text}`
-      : `Improve the following Korean text for voice narration. Make it more natural, engaging, and suitable for audio. Keep it in Korean. Return ONLY the improved text, nothing else.
+Voice identity: Korean female, mid-40s to late-40s (DJ 은주)
+Tone: soft, low-to-mid register, calm and mature.
+Affect: gentle and embracing — comforting presence like a warm shawl on a cool evening.
+Speaking style: intimate, reflective, and steady; natural storyteller pacing.
+Emotion: quietly heartfelt, never theatrical.
+Pronunciation: crisp and standard Korean, deliberate diction.
 
-Original:
-${text}`
+Original text:
+${text}
+
+Return ONLY the improved text in Korean, nothing else.`
 
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
