@@ -34,6 +34,12 @@ export default function ShortsPage() {
   const [improving, setImproving] = useState(false)
   const [isAudioLoading, setIsAudioLoading] = useState(false)
 
+  // TTS Settings
+  const [ttsVoice, setTtsVoice] = useState('ko-KR-Neural2-A')
+  const [ttsSpeed, setTtsSpeed] = useState(1.0)
+  const [ttsPitch, setTtsPitch] = useState(1.0)
+  const [ttsTone, setTtsTone] = useState('') // For SSML
+
   // Editor State
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null)
@@ -126,7 +132,13 @@ export default function ShortsPage() {
       const res = await fetch('/api/tts/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: result.script, voice: 'ko-KR-Neural2-A' }),
+        body: JSON.stringify({
+          text: result.script,
+          voice: ttsVoice,
+          speed: ttsSpeed,
+          pitch: ttsPitch,
+          tone: ttsTone, // Pass SSML content
+        }),
       });
       if (!res.ok) {
         const errData = await res.json();
@@ -342,6 +354,40 @@ export default function ShortsPage() {
               <div className="bg-gray-800 rounded-lg p-6">
                 <h2 className="text-2xl font-bold mb-4">생성된 대본</h2>
                 <p className="whitespace-pre-wrap bg-gray-700 p-4 rounded">{result.script}</p>
+              </div>
+
+              <div className="bg-gray-800 rounded-lg p-6">
+                <h2 className="text-2xl font-bold mb-4">음성 설정</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">목소리 선택</label>
+                    <select value={ttsVoice} onChange={(e) => setTtsVoice(e.target.value)} className="w-full bg-gray-700 text-white rounded-lg p-3">
+                      <optgroup label="Neural2 (고품질)">
+                        <option value="ko-KR-Neural2-A">Neural2-A (여성)</option>
+                        <option value="ko-KR-Neural2-B">Neural2-B (여성)</option>
+                        <option value="ko-KR-Neural2-C">Neural2-C (남성)</option>
+                      </optgroup>
+                      <optgroup label="Wavenet (자연스러움)">
+                        <option value="ko-KR-Wavenet-A">Wavenet-A (여성)</option>
+                        <option value="ko-KR-Wavenet-B">Wavenet-B (여성)</option>
+                        <option value="ko-KR-Wavenet-C">Wavenet-C (남성)</option>
+                        <option value="ko-KR-Wavenet-D">Wavenet-D (남성)</option>
+                      </optgroup>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">SSML 입력 (선택)</label>
+                    <textarea value={ttsTone} onChange={(e) => setTtsTone(e.target.value)} placeholder="<speak>...</speak> 코드를 여기에 입력" className="w-full h-24 bg-gray-700 text-white rounded-lg p-3 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">속도: {ttsSpeed.toFixed(1)}x</label>
+                    <input type="range" min="0.5" max="2.0" step="0.1" value={ttsSpeed} onChange={(e) => setTtsSpeed(parseFloat(e.target.value))} className="w-full" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">음높이: {ttsPitch.toFixed(1)}</label>
+                    <input type="range" min="0.5" max="2.0" step="0.1" value={ttsPitch} onChange={(e) => setTtsPitch(parseFloat(e.target.value))} className="w-full" />
+                  </div>
+                </div>
               </div>
 
               {result.audioUrl && (
