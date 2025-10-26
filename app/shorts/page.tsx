@@ -102,44 +102,56 @@ export default function ShortsPage() {
   };
 
   const addSubtitles = async () => {
-    if (!result || !result.script || result.images.length === 0) return;
+    console.log('addSubtitles: Function called.');
+    if (!result || !result.script || result.images.length === 0) {
+      console.error('addSubtitles: No result to process.');
+      return;
+    }
 
     setLoading(true);
     setProgress('자막 추가 중...');
+    console.log('addSubtitles: Loading state enabled.');
 
     try {
       const sceneLength = Math.floor(result.script.length / result.images.length);
+      console.log(`addSubtitles: Script length per scene: ${sceneLength}`);
+
       const subtitledImages = await Promise.all(result.images.map((imgSrc, index) => {
         return new Promise((resolve, reject) => {
-          if (!imgSrc) { // Handle failed (black) images
+          console.log(`addSubtitles: Processing image ${index + 1}`);
+          if (!imgSrc) {
+            console.warn(`addSubtitles: Image ${index + 1} has no source, skipping.`);
             resolve(imgSrc);
             return;
           }
           const img = new Image();
           img.crossOrigin = 'anonymous';
+          
           img.onload = () => {
+            console.log(`addSubtitles: Image ${index + 1} loaded successfully.`);
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             if (!ctx) {
+              console.error('addSubtitles: Failed to get canvas context.');
               reject(new Error('Canvas context를 얻을 수 없습니다.'));
               return;
             }
 
             canvas.width = img.width;
             canvas.height = img.height;
+            console.log(`addSubtitles: Canvas for image ${index + 1} created with size ${img.width}x${img.height}`);
 
             ctx.drawImage(img, 0, 0);
 
-            // Text settings
             const text = result.script.substring(index * sceneLength, (index + 1) * sceneLength).trim();
-            const fontSize = Math.floor(canvas.width / 20); // Responsive font size
+            console.log(`addSubtitles: Text for image ${index + 1}: "${text}"`);
+            const fontSize = Math.floor(canvas.width / 20);
             ctx.font = `bold ${fontSize}px Arial, sans-serif`;
             ctx.fillStyle = 'white';
             ctx.strokeStyle = 'black';
             ctx.lineWidth = fontSize / 8;
             ctx.textAlign = 'center';
 
-            // Simple text wrapping
             const lines = [];
             const words = text.split(' ');
             let currentLine = words[0] || '';
@@ -164,23 +176,32 @@ export default function ShortsPage() {
               ctx.strokeText(line, canvas.width / 2, y);
               ctx.fillText(line, canvas.width / 2, y);
             });
+            console.log(`addSubtitles: Text drawn on image ${index + 1}`);
 
-            resolve(canvas.toDataURL('image/png'));
+            const dataUrl = canvas.toDataURL('image/png');
+            console.log(`addSubtitles: Generated new data URL for image ${index + 1} (length: ${dataUrl.length})`);
+            resolve(dataUrl);
           };
-          img.onerror = () => {
-            resolve(imgSrc); // Resolve with original src if image fails to load
+
+          img.onerror = (err) => {
+            console.error(`addSubtitles: Image ${index + 1} failed to load.`, err);
+            resolve(imgSrc); // Resolve with original src to not break the array
           };
+
           img.src = imgSrc;
         });
       }));
 
+      console.log('addSubtitles: All images processed. Updating state.');
       setResult(prev => prev ? { ...prev, images: subtitledImages as string[] } : null);
 
     } catch (err: any) {
+      console.error('addSubtitles: An error occurred in the main try block.', err);
       setError(err.message || '자막 추가 중 오류 발생');
     } finally {
       setLoading(false);
       setProgress('');
+      console.log('addSubtitles: Function finished.');
     }
   };
 
