@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export const runtime = 'edge'
 
 export async function POST(req: NextRequest) {
-  const { mode, input, duration, sceneCount } = await req.json()
+  const { mode, input, duration, sceneCount, imageStyle } = await req.json()
 
   if (!input) {
     return new NextResponse(JSON.stringify({ error: '입력이 필요합니다' }), { status: 400 })
@@ -42,13 +42,23 @@ export async function POST(req: NextRequest) {
     const scriptData = await scriptRes.json()
     const script = scriptData.candidates?.[0]?.content?.parts?.[0]?.text || ''
 
+    // Style mapping
+    const styleMap: { [key: string]: string } = {
+      photorealistic: 'hyper-realistic, photorealistic, 8k',
+      anime: 'in a vibrant, high-quality anime art style',
+      '3d-render': 'as a high-detail 3D render, trending on ArtStation',
+      'fantasy-art': 'in a digital fantasy art style, epic, detailed',
+      cinematic: 'cinematic, film quality, dramatic lighting',
+    };
+    const styleDescription = styleMap[imageStyle] || 'cinematic';
+
     // 2. 장면 이미지 생성
     const images: string[] = []
     for (let i = 0; i < sceneCount; i++) {
       const scenePart = Math.floor(script.length / sceneCount)
       const sceneText = script.substring(i * scenePart, (i + 1) * scenePart)
       
-      const imagePrompt = `**Subject:** A cinematic shot of a KOREAN person. The scene is based on the following script snippet: "${sceneText.substring(0, 150)}".\n\n**Style:** Photorealistic, cinematic lighting, high detail, film quality, modern, colorful, engaging. The setting should be appropriate for South Korea.\n\n**Negative Prompt (what to avoid):** Do NOT include any text, words, letters, subtitles, or characters in the image.`
+      const imagePrompt = `**Subject:** A cinematic shot of a KOREAN person. The scene is based on the following script snippet: "${sceneText.substring(0, 150)}".\n\n**Style:** ${styleDescription}. The setting should be appropriate for South Korea.\n\n**Negative Prompt (what to avoid):** Do NOT include any text, words, letters, subtitles, or characters in the image.`
 
       let imageGenerated = false;
       for (let attempt = 1; attempt <= 2; attempt++) { // Retry up to 2 times

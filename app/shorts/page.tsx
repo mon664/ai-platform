@@ -14,6 +14,8 @@ export default function ShortsPage() {
   const [prompt, setPrompt] = useState('')
   const [duration, setDuration] = useState(30)
   const [sceneCount, setSceneCount] = useState(5)
+  const [imageStyle, setImageStyle] = useState('photorealistic')
+
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState('')
   const [result, setResult] = useState<ShortsResult | null>(null)
@@ -76,6 +78,7 @@ export default function ShortsPage() {
           input,
           duration,
           sceneCount,
+          imageStyle,
         }),
       });
 
@@ -303,7 +306,7 @@ export default function ShortsPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           {/* 영상 길이 */}
           <div className="bg-gray-800 rounded-lg p-6">
             <label className="block text-lg font-semibold mb-3">영상 길이</label>
@@ -329,6 +332,22 @@ export default function ShortsPage() {
               {[3, 4, 5, 6, 7, 8].map(n => (
                 <option key={n} value={n}>{n}개</option>
               ))}
+            </select>
+          </div>
+
+          {/* 이미지 스타일 */}
+          <div className="bg-gray-800 rounded-lg p-6">
+            <label className="block text-lg font-semibold mb-3">이미지 스타일</label>
+            <select
+              value={imageStyle}
+              onChange={(e) => setImageStyle(e.target.value)}
+              className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-pink-500"
+            >
+              <option value="photorealistic">실사</option>
+              <option value="anime">애니메이션</option>
+              <option value="3d-render">3D 렌더</option>
+              <option value="fantasy-art">판타지 아트</option>
+              <option value="cinematic">영화처럼</option>
             </select>
           </div>
         </div>
