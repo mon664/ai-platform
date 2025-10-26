@@ -124,7 +124,7 @@ Style: modern, colorful, engaging`
           if (imagePart?.inlineData?.data) {
             const b64 = imagePart.inlineData.data
             const mime = imagePart.inlineData.mimeType
-            const chunkSize = 30000
+            const chunkSize = 15000
 
             for (let j = 0; j < b64.length; j += chunkSize) {
               const chunk = b64.substring(j, j + chunkSize)
