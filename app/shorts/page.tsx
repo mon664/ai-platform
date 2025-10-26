@@ -146,10 +146,8 @@ export default function ShortsPage() {
       }
       const data = await res.json();
 
-      if (data.audioContents && data.audioContents.length > 0) {
-        console.log(`음성 파일이 ${data.audioContents.length}개 생성되었습니다. 첫 번째 파일만 우선 재생합니다.`);
-        const firstAudioBase64 = data.audioContents[0];
-        const audioBlob = await (await fetch(`data:audio/wav;base64,${firstAudioBase64}`)).blob();
+      if (data.audioContent) {
+        const audioBlob = await (await fetch(`data:audio/wav;base64,${data.audioContent}`)).blob();
         const url = URL.createObjectURL(audioBlob);
         setResult(prev => prev ? { ...prev, audioUrl: url } : null);
       } else {
@@ -162,6 +160,7 @@ export default function ShortsPage() {
       setIsAudioLoading(false);
     }
   };
+
 
   useEffect(() => {
     if (isEditorOpen && editingImageIndex !== null && result) {
@@ -402,8 +401,8 @@ export default function ShortsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold mb-2">SSML 입력 (선택)</label>
-                    <textarea value={ttsTone} onChange={(e) => setTtsTone(e.target.value)} placeholder="<speak>...</speak> 코드를 여기에 입력" className="w-full h-24 bg-gray-700 text-white rounded-lg p-3 resize-none" />
+                    <label className="block text-sm font-semibold mb-2">목소리 톤/분위기 (선택)</label>
+                    <input type="text" value={ttsTone} onChange={(e) => setTtsTone(e.target.value)} placeholder="예: 밝고 활기차게, 차분하게" className="w-full bg-gray-700 text-white rounded-lg p-3" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold mb-2">속도: {ttsSpeed.toFixed(1)}x</label>
