@@ -9,26 +9,21 @@ interface ShortsResult {
 }
 
 export default function ShortsPage() {
+  const [mode, setMode] = useState<'keyword' | 'prompt'>('keyword')
   const [keyword, setKeyword] = useState('')
+  const [prompt, setPrompt] = useState('')
+  const [duration, setDuration] = useState(30)
   const [sceneCount, setSceneCount] = useState(5)
-  const [voice, setVoice] = useState('ko-KR-Neural2-A')
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState('')
   const [result, setResult] = useState<ShortsResult | null>(null)
   const [error, setError] = useState('')
 
-  const voices = [
-    { value: 'ko-KR-Standard-A', label: '여성 A' },
-    { value: 'ko-KR-Standard-B', label: '여성 B' },
-    { value: 'ko-KR-Standard-C', label: '남성 C' },
-    { value: 'ko-KR-Neural2-A', label: 'Neural 여성 A' },
-    { value: 'ko-KR-Neural2-B', label: 'Neural 여성 B' },
-    { value: 'ko-KR-Neural2-C', label: 'Neural 남성 C' }
-  ]
-
   const generateShorts = async () => {
-    if (!keyword.trim()) {
-      setError('키워드를 입력해주세요')
+    const input = mode === 'keyword' ? keyword : prompt
+
+    if (!input.trim()) {
+      setError(mode === 'keyword' ? '키워드를 입력해주세요' : '프롬프트를 입력해주세요')
       return
     }
 
@@ -41,7 +36,12 @@ export default function ShortsPage() {
       const res = await fetch('/api/shorts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyword, sceneCount, voice })
+        body: JSON.stringify({
+          mode,
+          input,
+          duration,
+          sceneCount
+        })
       })
 
       if (!res.ok) throw new Error('쇼츠 생성 실패')
@@ -115,19 +115,78 @@ export default function ShortsPage() {
       <div className="p-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold mb-2 text-center">YouTube 쇼츠 자동 생성기</h1>
-        <p className="text-gray-400 text-center mb-8">키워드 입력만으로 쇼츠 제작 소재 생성</p>
+        <p className="text-gray-400 text-center mb-8">AI가 대본과 장면 이미지를 자동으로 생성</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          {/* 키워드 입력 */}
-          <div className="bg-gray-800 rounded-lg p-6 md:col-span-2">
-            <label className="block text-lg font-semibold mb-3">키워드</label>
-            <input
-              type="text"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder="예: 고구마, 우주, 인공지능"
+        {/* 생성 모드 선택 */}
+        <div className="bg-gray-800 rounded-lg p-6 mb-6">
+          <label className="block text-lg font-semibold mb-3">생성 모드</label>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => setMode('keyword')}
+              className={`p-4 rounded-lg font-semibold transition-colors ${
+                mode === 'keyword'
+                  ? 'bg-pink-600 text-white'
+                  : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+              }`}
+            >
+              🔑 키워드 모드
+              <p className="text-sm font-normal mt-1">간단한 주제로 자동 생성</p>
+            </button>
+            <button
+              onClick={() => setMode('prompt')}
+              className={`p-4 rounded-lg font-semibold transition-colors ${
+                mode === 'prompt'
+                  ? 'bg-pink-600 text-white'
+                  : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+              }`}
+            >
+              ✍️ 프롬프트 모드
+              <p className="text-sm font-normal mt-1">상세한 대본/시나리오 입력</p>
+            </button>
+          </div>
+        </div>
+
+        {/* 입력 영역 */}
+        <div className="bg-gray-800 rounded-lg p-6 mb-6">
+          {mode === 'keyword' ? (
+            <>
+              <label className="block text-lg font-semibold mb-3">키워드</label>
+              <input
+                type="text"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="예: 고구마의 효능, 우주의 신비, AI의 미래"
+                className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-pink-500"
+              />
+              <p className="text-sm text-gray-400 mt-2">간단한 주제를 입력하면 AI가 자동으로 대본을 생성합니다</p>
+            </>
+          ) : (
+            <>
+              <label className="block text-lg font-semibold mb-3">상세 프롬프트</label>
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="예: 고구마의 5가지 건강 효능에 대해 설명하는 영상을 만들어줘. 각 효능마다 구체적인 예시를 들어서 설명하고, 마지막에는 섭취 방법을 추천해줘."
+                className="w-full h-32 bg-gray-700 text-white rounded-lg p-4 resize-none focus:outline-none focus:ring-2 focus:ring-pink-500"
+              />
+              <p className="text-sm text-gray-400 mt-2">상세한 대본이나 시나리오를 입력하면 더 정확한 결과를 얻을 수 있습니다</p>
+            </>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* 영상 길이 */}
+          <div className="bg-gray-800 rounded-lg p-6">
+            <label className="block text-lg font-semibold mb-3">영상 길이</label>
+            <select
+              value={duration}
+              onChange={(e) => setDuration(Number(e.target.value))}
               className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-pink-500"
-            />
+            >
+              <option value={30}>30초</option>
+              <option value={45}>45초</option>
+              <option value={60}>60초 (1분)</option>
+            </select>
           </div>
 
           {/* 장면 수 */}
@@ -143,20 +202,6 @@ export default function ShortsPage() {
               ))}
             </select>
           </div>
-        </div>
-
-        {/* 음성 선택 */}
-        <div className="bg-gray-800 rounded-lg p-6 mb-6">
-          <label className="block text-lg font-semibold mb-3">음성</label>
-          <select
-            value={voice}
-            onChange={(e) => setVoice(e.target.value)}
-            className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-pink-500"
-          >
-            {voices.map(v => (
-              <option key={v.value} value={v.value}>{v.label}</option>
-            ))}
-          </select>
         </div>
 
         {/* 생성 버튼 */}
