@@ -41,11 +41,14 @@ export async function POST(req: NextRequest) {
       }
 
       const ssmlGenData = await ssmlGenRes.json();
-      ssmlToSynthesize = ssmlGenData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      console.log(`TTS API: AI generated SSML (raw): ${ssmlToSynthesize.substring(0, 200)}...`);
+      const rawResponse = ssmlGenData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      console.log(`TTS API: AI generated raw response: ${rawResponse.substring(0, 200)}...`);
+
+      const ssmlMatch = rawResponse.match(/<speak>[\s\S]*?<\/speak>/);
+      ssmlToSynthesize = ssmlMatch ? ssmlMatch[0] : '';
       
-      if (!ssmlToSynthesize.trim().startsWith('<speak>')) {
-         console.error('TTS API: Error - AI did not generate valid SSML.', ssmlToSynthesize);
+      if (!ssmlToSynthesize) {
+         console.error('TTS API: Error - Could not extract valid SSML from AI response.', rawResponse);
          throw new Error('AI가 유효한 SSML을 생성하지 못했습니다.');
       }
 

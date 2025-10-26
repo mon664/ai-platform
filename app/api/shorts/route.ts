@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
         parts.push({ text: textPrompt });
         parts.push({ inline_data: { mime_type: protagonistMimeType, data: protagonistB64 } });
       } else {
-        textPrompt = `**Prompt:** A high-quality, cinematic shot of a KOREAN person. The scene is based on the script: "${sceneText.substring(0, 150)}". The image must be visually focused on the scene and characters.\n\n**Style:** ${styleDescription}. The setting is South Korea.\n\n---\n**Negative Prompt:** text, words, letters, characters, subtitles, watermarks, logos, writing, script, font, signature.`;
+      const imagePrompt = `Negative Prompt: text, words, letters, characters, subtitles, watermarks, logos, writing, script, font, signature. Do not render any text on the image.\n---\n**Prompt:** A high-quality, cinematic shot of a KOREAN person. The scene is based on the script: "${sceneText.substring(0, 150)}". The image must be visually focused on the scene and characters.\n\n**Style:** ${styleDescription}. The setting is South Korea.`;
         parts.push({ text: textPrompt });
       }
       console.log(`[Scene ${i+1}] Prompt ready.`);
