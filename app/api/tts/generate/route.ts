@@ -77,14 +77,11 @@ export async function POST(req: NextRequest) {
       }
     );
 
-          if (!res.ok) {
-            const errorText = await res.text();
-            const usedKey = process.env.GOOGLE_CLOUD_TTS_API_KEY || 'Not Found';
-            const errorMsg = `최종 음성 생성 실패. 사용된 키(앞 8자리): ${usedKey.substring(0, 8)}...`;
-            console.error(`TTS API: Google TTS API call failed. Status: ${res.status}, Error: ${errorText}`);
-            throw new Error(errorMsg);
-          }
-    const data = await res.json();
+                if (!res.ok) {
+                  const errorText = await res.text();
+                  console.error(`TTS API: Google TTS API call failed. Status: ${res.status}, Error: ${errorText}`);
+                  throw new Error(`최종 음성 생성 실패: ${errorText}`);
+                }    const data = await res.json();
     console.log('TTS API: Google TTS API call successful.');
     
     return new NextResponse(JSON.stringify({ audioContent: data.audioContent }), {
