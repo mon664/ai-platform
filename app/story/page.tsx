@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Navigation from '../components/Navigation'
 
 export default function StoryGenerator() {
   const [protagonist, setProtagonist] = useState<File | null>(null)
@@ -91,7 +92,9 @@ export default function StoryGenerator() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
+    <div className="min-h-screen bg-gray-900 text-white">
+      <Navigation />
+      <div className="p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold mb-8">🎬 AI 스토리 장면 생성기</h1>
 
@@ -229,6 +232,7 @@ export default function StoryGenerator() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   )

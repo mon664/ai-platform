@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Navigation from '../components/Navigation'
 
 interface ShortsResult {
   script: string
@@ -109,7 +110,9 @@ export default function ShortsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-900 to-gray-900 text-white p-8">
+    <div className="min-h-screen bg-gradient-to-br from-pink-900 to-gray-900 text-white">
+      <Navigation />
+      <div className="p-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold mb-2 text-center">YouTube 쇼츠 자동 생성기</h1>
         <p className="text-gray-400 text-center mb-8">키워드 입력만으로 쇼츠 제작 소재 생성</p>
@@ -214,6 +217,7 @@ export default function ShortsPage() {
             </p>
           </div>
         )}
+      </div>
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Navigation from '../components/Navigation'
 
 export default function CharacterPage() {
   const [prompt, setPrompt] = useState('')
@@ -44,7 +45,9 @@ export default function CharacterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+      <Navigation />
+      <div className="p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold mb-2 text-center">캐릭터 이미지 생성기</h1>
         <p className="text-gray-400 text-center mb-8">YouTube 썸네일 & AI 스토리 주인공용</p>
@@ -114,6 +117,7 @@ export default function CharacterPage() {
             </p>
           </div>
         )}
+      </div>
       </div>
     </div>
   )
