@@ -56,12 +56,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '음성 데이터 없음' }, { status: 500 })
     }
 
-    const audioBytes = Uint8Array.from(atob(audioContent), c => c.charCodeAt(0))
+    // Base64 디코딩 (Edge Runtime 호환)
+    const binaryString = atob(audioContent)
+    const bytes = new Uint8Array(binaryString.length)
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
 
-    return new Response(audioBytes, {
+    return new Response(bytes, {
       headers: {
         'Content-Type': 'audio/wav',
-        'Content-Disposition': 'attachment; filename="tts.wav"'
+        'Content-Disposition': 'attachment; filename="tts.wav"',
+        'Content-Length': bytes.length.toString()
       }
     })
 
