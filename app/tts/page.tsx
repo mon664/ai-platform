@@ -137,7 +137,7 @@ export default function TTSPage() {
       const res = await fetch('/api/tts/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: finalText, voice: speaker.cloudVoice, speed, pitch })
+        body: JSON.stringify({ text: finalText, voice: speaker.cloudVoice, speed, pitch, tone: speaker.tone })
       })
 
       if (!res.ok) {
@@ -241,13 +241,17 @@ export default function TTSPage() {
 
             <div>
               <label className="block text-sm font-semibold mb-2">톤/분위기 (선택)</label>
-              <input
-                type="text"
+              <select
                 value={speaker1.tone}
                 onChange={(e) => setSpeaker1({ ...speaker1, tone: e.target.value })}
-                placeholder="예: 밝고 경쾌하게"
                 className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
+              >
+                <option value="">기본</option>
+                <option value="cheerful">밝고 경쾌하게</option>
+                <option value="calm">차분하게</option>
+                <option value="angry">화난 듯이</option>
+                <option value="sad">슬픈 듯이</option>
+              </select>
             </div>
           </div>
 
@@ -355,13 +359,17 @@ export default function TTSPage() {
 
               <div>
                 <label className="block text-sm font-semibold mb-2">톤/분위기 (선택)</label>
-                <input
-                  type="text"
+                <select
                   value={speaker2.tone}
                   onChange={(e) => setSpeaker2({ ...speaker2, tone: e.target.value })}
-                  placeholder="예: 차분하고 진지하게"
                   className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
+                >
+                  <option value="">기본</option>
+                  <option value="cheerful">밝고 경쾌하게</option>
+                  <option value="calm">차분하게</option>
+                  <option value="angry">화난 듯이</option>
+                  <option value="sad">슬픈 듯이</option>
+                </select>
               </div>
             </div>
 
