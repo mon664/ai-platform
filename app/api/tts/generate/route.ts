@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     if (tone && tone.trim()) {
       console.log('TTS API: Tone provided, starting AI for SSML generation.');
-      const ssmlGenPrompt = `You are an expert in Speech Synthesis Markup Language (SSML). Your task is to take a plain text script and a desired mood, and convert the script into a well-formed SSML string to reflect that mood. Use <prosody>, <emphasis>, <break>, and other appropriate tags to control the speech pace, pitch, and emotion. Ensure the entire output is wrapped in a single <speak> tag.\n\n**Desired Mood:** "${tone}"\n\n**Plain Text Script:**\n"${text}"\n\n**Your SSML Output:**`;
+      const ssmlGenPrompt = `You are an SSML generation machine. Your ONLY output should be a single, valid SSML string. Do not include any explanation, preamble, or markdown. Your entire response must start with '<speak>' and end with '</speak>'.\n\nConvert the following plain text script into SSML that reflects the desired mood.\n\n**Desired Mood:** "${tone}"\n\n**Plain Text Script:**\n"${text}"\n\n**SSML Output (must start with '<speak>'):**`;
 
       const ssmlGenRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
