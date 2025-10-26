@@ -101,6 +101,89 @@ export default function ShortsPage() {
     }
   };
 
+  const addSubtitles = async () => {
+    if (!result || !result.script || result.images.length === 0) return;
+
+    setLoading(true);
+    setProgress('자막 추가 중...');
+
+    try {
+      const sceneLength = Math.floor(result.script.length / result.images.length);
+      const subtitledImages = await Promise.all(result.images.map((imgSrc, index) => {
+        return new Promise((resolve, reject) => {
+          if (!imgSrc) { // Handle failed (black) images
+            resolve(imgSrc);
+            return;
+          }
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              reject(new Error('Canvas context를 얻을 수 없습니다.'));
+              return;
+            }
+
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            ctx.drawImage(img, 0, 0);
+
+            // Text settings
+            const text = result.script.substring(index * sceneLength, (index + 1) * sceneLength).trim();
+            const fontSize = Math.floor(canvas.width / 20); // Responsive font size
+            ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = fontSize / 8;
+            ctx.textAlign = 'center';
+
+            // Simple text wrapping
+            const lines = [];
+            const words = text.split(' ');
+            let currentLine = words[0] || '';
+
+            for (let i = 1; i < words.length; i++) {
+              const word = words[i];
+              const width = ctx.measureText(currentLine + " " + word).width;
+              if (width < canvas.width * 0.9) {
+                currentLine += " " + word;
+              } else {
+                lines.push(currentLine);
+                currentLine = word;
+              }
+            }
+            lines.push(currentLine);
+            
+            const lineHeight = fontSize * 1.2;
+            const startY = canvas.height - (lines.length * lineHeight) - (canvas.height * 0.1);
+
+            lines.forEach((line, i) => {
+              const y = startY + (i * lineHeight);
+              ctx.strokeText(line, canvas.width / 2, y);
+              ctx.fillText(line, canvas.width / 2, y);
+            });
+
+            resolve(canvas.toDataURL('image/png'));
+          };
+          img.onerror = () => {
+            resolve(imgSrc); // Resolve with original src if image fails to load
+          };
+          img.src = imgSrc;
+        });
+      }));
+
+      setResult(prev => prev ? { ...prev, images: subtitledImages as string[] } : null);
+
+    } catch (err: any) {
+      setError(err.message || '자막 추가 중 오류 발생');
+    } finally {
+      setLoading(false);
+      setProgress('');
+    }
+  };
+
   const downloadAll = () => {
     // 대본 다운로드
     const scriptBlob = new Blob([result?.script || ''], { type: 'text/plain' })
@@ -112,6 +195,7 @@ export default function ShortsPage() {
 
     // 이미지 다운로드
     result?.images.forEach((img, i) => {
+      if (!img) return; // Don't download failed images
       const link = document.createElement('a')
       link.href = img
       link.download = `scene-${i + 1}.png`
@@ -273,13 +357,21 @@ export default function ShortsPage() {
               </div>
             )}
 
-            {/* 다운로드 */}
-            <button
-              onClick={downloadAll}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-            >
-              모든 파일 다운로드
-            </button>
+            {/* 액션 버튼 */}
+            <div className="flex gap-4">
+              <button
+                onClick={addSubtitles}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+              >
+                자막 추가하기
+              </button>
+              <button
+                onClick={downloadAll}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+              >
+                모든 파일 다운로드
+              </button>
+            </div>
 
             <p className="text-sm text-gray-400 text-center">
               💡 생성된 이미지와 음성을 영상 편집 프로그램에서 합성하여 쇼츠를 완성하세요
