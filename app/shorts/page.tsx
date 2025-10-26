@@ -52,6 +52,7 @@ export default function ShortsPage() {
       if (!reader) throw new Error('스트림을 읽을 수 없습니다')
 
       let resultData: ShortsResult = { script: '', audioUrl: '', images: [] }
+      const imageChunks: { [key: number]: { mime: string, chunks: string[] } } = {}
 
       while (true) {
         const { done, value } = await reader.read()
@@ -70,11 +71,17 @@ export default function ShortsPage() {
             if (data.script) {
               resultData.script = data.script
             }
-            if (data.audioUrl) {
-              resultData.audioUrl = data.audioUrl
-            }
-            if (data.image) {
-              resultData.images.push(data.image)
+            if (data.imageChunk) {
+              const idx = data.imageIndex
+              if (!imageChunks[idx]) {
+                imageChunks[idx] = { mime: data.mimeType, chunks: [] }
+              }
+              imageChunks[idx].chunks.push(data.imageChunk)
+              if (data.isLastChunk) {
+                const fullB64 = imageChunks[idx].chunks.join('')
+                const imageUrl = `data:${imageChunks[idx].mime};base64,${fullB64}`
+                resultData.images.push(imageUrl)
+              }
             }
             if (data.complete) {
               setResult(resultData)

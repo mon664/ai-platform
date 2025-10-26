@@ -19,6 +19,7 @@ export default function TTSPage() {
   const [improving, setImproving] = useState(false)
   const [error, setError] = useState('')
   const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [isPlaying, setIsPlaying] = useState(false)
 
   useEffect(() => {
     const loadVoices = () => {

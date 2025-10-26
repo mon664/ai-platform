@@ -16,21 +16,20 @@ export async function POST(req: NextRequest) {
 
   const encoder = new TextEncoder()
 
-  // JSON stringify 시 안전하게 처리하는 헬퍼 함수
-  const safeStringify = (obj: any) => {
-    const str = JSON.stringify(obj)
-    // 65000자 이상이면 잘라내기 (65536 limit 방지)
-    if (str.length > 65000) {
-      return JSON.stringify({ ...obj, truncated: true })
+  const send = (data: any) => {
+    try {
+      const msg = 'data: ' + JSON.stringify(data) + '\n\n'
+      controller.enqueue(encoder.encode(msg))
+    } catch (e) {
+      controller.enqueue(encoder.encode('data: {"error":"encoding error"}\n\n'))
     }
-    return str
   }
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
         // 1. 대본 생성
-        controller.enqueue(encoder.encode('data: ' + safeStringify({ progress: '대본 생성 중...' }) + '\n\n'))
+        send({ progress: '대본 생성 중...' })
 
         // duration에 따른 대본 길이 계산 (대략 1초당 5자)
         const targetLength = duration * 5
