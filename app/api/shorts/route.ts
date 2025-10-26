@@ -83,13 +83,11 @@ Just return the script text in Korean, nothing else.`
           script = script.substring(0, Math.floor(targetLength * 1.5))
         }
 
-        controller.enqueue(encoder.encode('data: ' + safeStringify({ script }) + '\n\n'))
+        send({ script })
 
         // 2. 장면 이미지 생성
         for (let i = 0; i < sceneCount; i++) {
-          controller.enqueue(encoder.encode('data: ' + safeStringify({
-            progress: `이미지 ${i + 1}/${sceneCount} 생성 중...`
-          }) + '\n\n'))
+          send({ progress: `이미지 ${i + 1}/${sceneCount} 생성 중...` })
 
           // 대본을 sceneCount로 나눠서 각 장면에 맞는 프롬프트 생성
           const scenePart = Math.floor(script.length / sceneCount)
@@ -124,20 +122,29 @@ Style: modern, colorful, engaging`
           const imagePart = imageData.candidates?.[0]?.content?.parts?.find((part: any) => part.inlineData)
 
           if (imagePart?.inlineData?.data) {
-            const imageUrl = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`
-            controller.enqueue(encoder.encode('data: ' + safeStringify({ image: imageUrl }) + '\n\n'))
+            const b64 = imagePart.inlineData.data
+            const mime = imagePart.inlineData.mimeType
+            const chunkSize = 50000
+
+            for (let j = 0; j < b64.length; j += chunkSize) {
+              const chunk = b64.substring(j, j + chunkSize)
+              const isLast = j + chunkSize >= b64.length
+              send({
+                imageChunk: chunk,
+                imageIndex: i,
+                mimeType: mime,
+                isLastChunk: isLast
+              })
+            }
           }
         }
 
-        // 완료
-        controller.enqueue(encoder.encode('data: ' + safeStringify({ complete: true }) + '\n\n'))
+        send({ complete: true })
         controller.close()
 
       } catch (error: any) {
         console.error('Shorts generation error:', error)
-        controller.enqueue(encoder.encode('data: ' + safeStringify({
-          error: error.message || '오류가 발생했습니다'
-        }) + '\n\n'))
+        send({ error: error.message || '오류가 발생했습니다' })
         controller.close()
       }
     }

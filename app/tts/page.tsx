@@ -85,9 +85,25 @@ export default function TTSPage() {
 
     utterance.rate = speed
     utterance.pitch = pitch
+    utterance.onend = () => setIsPlaying(false)
+    utterance.onerror = () => setIsPlaying(false)
 
     window.speechSynthesis.cancel()
     window.speechSynthesis.speak(utterance)
+    setIsPlaying(true)
+  }
+
+  const pauseResumeTTS = () => {
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume()
+    } else if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.pause()
+    }
+  }
+
+  const stopTTS = () => {
+    window.speechSynthesis.cancel()
+    setIsPlaying(false)
   }
 
   return (
