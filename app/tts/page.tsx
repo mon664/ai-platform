@@ -240,18 +240,14 @@ export default function TTSPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-2">톤/분위기 (선택)</label>
-              <select
+              <label className="block text-sm font-semibold mb-2">SSML 입력 (선택 사항)</label>
+              <input
+                type="text"
                 value={speaker1.tone}
                 onChange={(e) => setSpeaker1({ ...speaker1, tone: e.target.value })}
+                placeholder="<speak>...</speak> 코드를 여기에 입력"
                 className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="">기본</option>
-                <option value="cheerful">밝고 경쾌하게</option>
-                <option value="calm">차분하게</option>
-                <option value="angry">화난 듯이</option>
-                <option value="sad">슬픈 듯이</option>
-              </select>
+              />
             </div>
           </div>
 
@@ -358,18 +354,14 @@ export default function TTSPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">톤/분위기 (선택)</label>
-                <select
+                <label className="block text-sm font-semibold mb-2">SSML 입력 (선택 사항)</label>
+                <input
+                  type="text"
                   value={speaker2.tone}
                   onChange={(e) => setSpeaker2({ ...speaker2, tone: e.target.value })}
+                  placeholder="<speak>...</speak> 코드를 여기에 입력"
                   className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="">기본</option>
-                  <option value="cheerful">밝고 경쾌하게</option>
-                  <option value="calm">차분하게</option>
-                  <option value="angry">화난 듯이</option>
-                  <option value="sad">슬픈 듯이</option>
-                </select>
+                />
               </div>
             </div>
 

@@ -6,8 +6,8 @@ export async function POST(req: NextRequest) {
   try {
     const { text, voice, speed, pitch, tone } = await req.json();
 
-    if (!text) {
-      return NextResponse.json({ error: '텍스트가 필요합니다' }, { status: 400 });
+    if (!text && !(tone && tone.trim().startsWith('<speak>'))) {
+      return NextResponse.json({ error: '텍스트 또는 SSML을 입력해주세요' }, { status: 400 });
     }
 
     const API_KEY = process.env.GOOGLE_CLOUD_TTS_API_KEY;
@@ -17,52 +17,30 @@ export async function POST(req: NextRequest) {
 
     const voiceName = voice || 'ko-KR-Neural2-A';
 
-    // SSML 생성을 위한 파라미터 계산
-    let ssmlText = text;
-    const baseRate = speed || 1.0;
-    const basePitch = (pitch - 1.0) * 20 || 0.0;
+    const isSsml = tone && tone.trim().startsWith('<speak>');
 
-    let finalRate = baseRate;
-    let finalPitch = basePitch;
+    const requestBody: any = {
+      voice: {
+        languageCode: 'ko-KR',
+        name: voiceName,
+      },
+      audioConfig: {
+        audioEncoding: 'LINEAR16',
+      },
+      input: isSsml ? { ssml: tone } : { text: text },
+    };
 
-    switch (tone) {
-      case 'cheerful':
-        finalRate *= 1.1;
-        finalPitch += 2.0;
-        break;
-      case 'calm':
-        finalRate *= 0.9;
-        break;
-      case 'angry':
-        finalRate *= 1.1;
-        finalPitch -= 2.0;
-        ssmlText = `<emphasis level="strong">${text}</emphasis>`;
-        break;
-      case 'sad':
-        finalRate *= 0.8;
-        finalPitch -= 4.0;
-        break;
+    if (!isSsml) {
+      requestBody.audioConfig.speakingRate = speed || 1.0;
+      requestBody.audioConfig.pitch = (pitch - 1.0) * 20 || 0.0;
     }
-
-    // SSML 최종 구성
-    const ssml = `<speak><prosody rate="${finalRate.toFixed(2)}" pitch="${finalPitch.toFixed(2)}st">${ssmlText}</prosody></speak>`;
 
     const res = await fetch(
       `https://texttospeech.googleapis.com/v1/text:synthesize?key=${API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          input: { ssml }, // SSML 사용
-          voice: {
-            languageCode: 'ko-KR',
-            name: voiceName,
-          },
-          audioConfig: {
-            audioEncoding: 'LINEAR16',
-            // speakingRate와 pitch는 SSML에서 제어하므로 제거
-          },
-        }),
+        body: JSON.stringify(requestBody),
       }
     );
 
@@ -95,10 +73,10 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('TTS generation error:', error)
+    console.error('TTS generation error:', error);
     return NextResponse.json(
       { error: error.message || '서버 오류가 발생했습니다' },
       { status: 500 }
-    )
+    );
   }
 }
