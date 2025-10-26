@@ -16,17 +16,17 @@ export async function POST(req: NextRequest) {
 
   const encoder = new TextEncoder()
 
-  const send = (data: any) => {
-    try {
-      const msg = 'data: ' + JSON.stringify(data) + '\n\n'
-      controller.enqueue(encoder.encode(msg))
-    } catch (e) {
-      controller.enqueue(encoder.encode('data: {"error":"encoding error"}\n\n'))
-    }
-  }
-
   const stream = new ReadableStream({
     async start(controller) {
+      const send = (data: any) => {
+        try {
+          const msg = 'data: ' + JSON.stringify(data) + '\n\n'
+          controller.enqueue(encoder.encode(msg))
+        } catch (e) {
+          controller.enqueue(encoder.encode('data: {"error":"encoding error"}\n\n'))
+        }
+      }
+
       try {
         // 1. 대본 생성
         send({ progress: '대본 생성 중...' })
