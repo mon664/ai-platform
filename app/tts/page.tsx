@@ -189,12 +189,28 @@ export default function TTSPage() {
           )}
 
           {/* 음성 듣기 버튼 */}
-          <button
-            onClick={() => playTTS(1)}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-          >
-            🎤 음성 듣기
-          </button>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={() => playTTS(1)}
+              className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg"
+            >
+              ▶ 재생
+            </button>
+            <button
+              onClick={pauseResumeTTS}
+              disabled={!isPlaying}
+              className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 text-white font-bold py-3 rounded-lg"
+            >
+              ⏸ 일시정지
+            </button>
+            <button
+              onClick={stopTTS}
+              disabled={!isPlaying}
+              className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white font-bold py-3 rounded-lg"
+            >
+              ⏹ 정지
+            </button>
+          </div>
         </div>
 
         {/* 화자 2 */}
@@ -260,12 +276,28 @@ export default function TTSPage() {
             )}
 
             {/* 음성 듣기 버튼 */}
-            <button
-              onClick={() => playTTS(2)}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-            >
-              🎤 음성 듣기
-            </button>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => playTTS(2)}
+                className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg"
+              >
+                ▶ 재생
+              </button>
+              <button
+                onClick={pauseResumeTTS}
+                disabled={!isPlaying}
+                className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 text-white font-bold py-3 rounded-lg"
+              >
+                ⏸ 일시정지
+              </button>
+              <button
+                onClick={stopTTS}
+                disabled={!isPlaying}
+                className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white font-bold py-3 rounded-lg"
+              >
+                ⏹ 정지
+              </button>
+            </div>
           </div>
         )}
 
