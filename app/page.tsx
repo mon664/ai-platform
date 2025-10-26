@@ -79,17 +79,17 @@ export default function Home() {
               </ul>
             </button>
 
-            {/* AI TTS */}
+            {/* Google TTS */}
             <button
               onClick={() => window.location.href = '/tts'}
               className="bg-gray-800 hover:bg-gray-750 rounded-lg p-8 transition-all hover:scale-105 text-left"
             >
-              <h2 className="text-3xl font-bold mb-3">🎤 AI 음성 생성</h2>
-              <p className="text-gray-400 mb-4">Gemini로 대본 개선 + 브라우저 TTS</p>
+              <h2 className="text-3xl font-bold mb-3">🎤 Google TTS</h2>
+              <p className="text-gray-400 mb-4">고품질 한국어 Neural 음성 생성</p>
               <ul className="text-sm text-gray-500 space-y-1">
-                <li>✓ AI 대본 개선</li>
-                <li>✓ 음성 톤/분위기 설정</li>
-                <li>✓ 속도/음높이 조절</li>
+                <li>✓ 2명 음성 대화 지원</li>
+                <li>✓ 톤/분위기 AI 개선</li>
+                <li>✓ WAV 파일 다운로드</li>
               </ul>
             </button>
 
@@ -99,11 +99,11 @@ export default function Home() {
               className="bg-gray-800 hover:bg-gray-750 rounded-lg p-8 transition-all hover:scale-105 text-left"
             >
               <h2 className="text-3xl font-bold mb-3">🎬 쇼츠 자동 생성</h2>
-              <p className="text-gray-400 mb-4">키워드로 대본, 음성, 이미지 자동 생성</p>
+              <p className="text-gray-400 mb-4">키워드로 대본, 이미지 자동 생성</p>
               <ul className="text-sm text-gray-500 space-y-1">
                 <li>✓ Gemini 대본 생성</li>
-                <li>✓ 브라우저 TTS 음성</li>
                 <li>✓ Nano Banana 장면 이미지</li>
+                <li>✓ 실시간 진행 상황 표시</li>
               </ul>
             </button>
           </div>
@@ -134,7 +134,7 @@ export default function Home() {
             </div>
 
             <div className="text-sm text-gray-500">
-              <p>Powered by Gemini AI, Browser TTS, Nano Banana</p>
+              <p>Powered by Gemini AI, Google Cloud TTS, Nano Banana</p>
               <p className="mt-2">Cloudflare Pages • Next.js 15 • Edge Runtime</p>
             </div>
           </div>
