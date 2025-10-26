@@ -110,9 +110,9 @@ export default function TTSPage() {
 
   const generateTTSWav = async (speakerNum: 1 | 2) => {
     const speaker = speakerNum === 1 ? speaker1 : speaker2
-    const text = speaker.improvedText || speaker.text
+    let finalText = speaker.improvedText || speaker.text
 
-    if (!text.trim()) {
+    if (!finalText.trim()) {
       setError('텍스트를 입력해주세요')
       return
     }
@@ -121,10 +121,23 @@ export default function TTSPage() {
     setError('')
 
     try {
+      // 톤이 있으면 먼저 AI로 텍스트 개선
+      if (speaker.tone && speaker.tone.trim()) {
+        const improveRes = await fetch('/api/tts/improve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: finalText, tone: speaker.tone })
+        })
+        if (improveRes.ok) {
+          const improveData = await improveRes.json()
+          finalText = improveData.improvedText
+        }
+      }
+
       const res = await fetch('/api/tts/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voice: speaker.cloudVoice, speed, pitch })
+        body: JSON.stringify({ text: finalText, voice: speaker.cloudVoice, speed, pitch })
       })
 
       if (!res.ok) {

@@ -93,7 +93,7 @@ export default function ShortsPage() {
         const { done, value } = await reader.read()
         if (done) break
 
-        const chunk = decoder.decode(value)
+        const chunk = decoder.decode(value, { stream: true })
         const lines = chunk.split('\n')
 
         for (const line of lines) {
@@ -119,11 +119,12 @@ export default function ShortsPage() {
                 if (data.isLastChunk) {
                   const fullB64 = imageChunks[idx].chunks.join('')
                   const imageUrl = `data:${imageChunks[idx].mime};base64,${fullB64}`
-                  resultData.images.push(imageUrl)
+                  resultData.images[idx] = imageUrl
+                  setResult({ ...resultData })
                 }
               }
               if (data.complete) {
-                setResult(resultData)
+                setResult({ ...resultData })
               }
             } catch (e) {
               console.error('Parse error:', e, line)
