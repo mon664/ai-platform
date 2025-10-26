@@ -26,12 +26,13 @@ export default function ShortsPage() {
   const [duration, setDuration] = useState(30)
   const [sceneCount, setSceneCount] = useState(5)
   const [imageStyle, setImageStyle] = useState('photorealistic')
+  const [protagonistImage, setProtagonistImage] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState('')
   const [result, setResult] = useState<ShortsResult | null>(null)
   const [error, setError] = useState('')
   const [improving, setImproving] = useState(false)
-  const [protagonistImage, setProtagonistImage] = useState<File | null>(null)
+  const [isAudioLoading, setIsAudioLoading] = useState(false)
 
   // Editor State
   const [isEditorOpen, setIsEditorOpen] = useState(false)
@@ -70,99 +71,76 @@ export default function ShortsPage() {
     }
   }
 
-    const generateShorts = async () => {
-
-      const input = mode === 'keyword' ? keyword : prompt;
-
-      if (!input.trim()) {
-
-        setError(mode === 'keyword' ? '키워드를 입력해주세요' : '프롬프트를 입력해주세요');
-
-        return;
-
+  const generateShorts = async () => {
+    const input = mode === 'keyword' ? keyword : prompt;
+    if (!input.trim()) {
+      setError(mode === 'keyword' ? '키워드를 입력해주세요' : '프롬프트를 입력해주세요');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    setResult(null);
+    setProgress('쇼츠 생성 중... 잠시만 기다려주세요.');
+    try {
+      const formData = new FormData();
+      formData.append('mode', mode);
+      formData.append('input', input);
+      formData.append('duration', String(duration));
+      formData.append('sceneCount', String(sceneCount));
+      formData.append('imageStyle', imageStyle);
+      if (protagonistImage) {
+        formData.append('protagonistImage', protagonistImage);
       }
 
-  
+      const res = await fetch('/api/shorts', {
+        method: 'POST',
+        body: formData,
+      });
 
-      setLoading(true);
-
-      setError('');
-
-      setResult(null);
-
-      setProgress('쇼츠 생성 중... 잠시만 기다려주세요.');
-
-  
-
-      try {
-
-        const formData = new FormData();
-
-        formData.append('mode', mode);
-
-        formData.append('input', input);
-
-        formData.append('duration', String(duration));
-
-        formData.append('sceneCount', String(sceneCount));
-
-        formData.append('imageStyle', imageStyle);
-
-        if (protagonistImage) {
-
-          formData.append('protagonistImage', protagonistImage);
-
-        }
-
-  
-
-        const res = await fetch('/api/shorts', {
-
-          method: 'POST',
-
-          body: formData,
-
-        });
-
-  
-
-        if (!res.ok) {
-
-          const errData = await res.json();
-
-          throw new Error(errData.error || '쇼츠 생성에 실패했습니다.');
-
-        }
-
-  
-
-        const data = await res.json();
-
-        setResult({
-
-          script: data.script,
-
-          images: data.images,
-
-          audioUrl: '', 
-
-        });
-
-  
-
-      } catch (err: any) {
-
-        setError(err.message || '오류가 발생했습니다');
-
-      } finally {
-
-        setLoading(false);
-
-        setProgress('');
-
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || '쇼츠 생성에 실패했습니다.');
       }
-
-    };
+      const data = await res.json();
+      setResult({
+        script: data.script,
+        images: data.images,
+        audioUrl: '', 
+      });
+    } catch (err: any) {
+      setError(err.message || '오류가 발생했습니다');
+    } finally {
+      setLoading(false);
+      setProgress('');
+    }
+  };
+  
+  const generateAudio = async () => {
+    if (!result || !result.script) {
+      setError('음성을 생성할 대본이 없습니다.');
+      return;
+    }
+    setIsAudioLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/tts/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: result.script, voice: 'ko-KR-Neural2-A' }),
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || '음성 생성 실패');
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      setResult(prev => prev ? { ...prev, audioUrl: url } : null);
+    } catch (err: any) {
+      setError(err.message || '음성 생성 중 오류가 발생했습니다.');
+    } finally {
+      setIsAudioLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (isEditorOpen && editingImageIndex !== null && result) {
@@ -262,6 +240,13 @@ export default function ShortsPage() {
       link.download = `scene-${i + 1}.png`
       link.click()
     })
+
+    if (result.audioUrl) {
+      const audioLink = document.createElement('a');
+      audioLink.href = result.audioUrl;
+      audioLink.download = `audio-${Date.now()}.wav`;
+      audioLink.click();
+    }
   }
 
   return (
@@ -306,21 +291,21 @@ export default function ShortsPage() {
                 </button>
               </>
             )}
-                  </div>
+          </div>
           
-                  {/* 주인공 사진 업로드 */}
-                  <div className="bg-gray-800 rounded-lg p-6 mb-6">
-                    <label className="block text-lg font-semibold mb-3">주인공 사진 (선택 사항)</label>
-                    <input
-                      type="file"
-                      accept="image/png, image/jpeg"
-                      onChange={(e) => setProtagonistImage(e.target.files ? e.target.files[0] : null)}
-                      className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-600 file:text-white hover:file:bg-pink-700"
-                    />
-                    <p className="text-sm text-gray-400 mt-2">주인공 사진을 업로드하면, 모든 장면에 얼굴이 일관성 있게 유지됩니다.</p>
-                  </div>
-          
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">            <div className="bg-gray-800 rounded-lg p-6">
+          <div className="bg-gray-800 rounded-lg p-6 mb-6">
+            <label className="block text-lg font-semibold mb-3">주인공 사진 (선택 사항)</label>
+            <input
+              type="file"
+              accept="image/png, image/jpeg"
+              onChange={(e) => setProtagonistImage(e.target.files ? e.target.files[0] : null)}
+              className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-600 file:text-white hover:file:bg-pink-700"
+            />
+            <p className="text-sm text-gray-400 mt-2">주인공 사진을 업로드하면, 모든 장면에 얼굴이 일관성 있게 유지됩니다.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="bg-gray-800 rounded-lg p-6">
               <label className="block text-lg font-semibold mb-3">영상 길이</label>
               <select value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-pink-500">
                 <option value={30}>30초</option>
@@ -359,6 +344,13 @@ export default function ShortsPage() {
                 <p className="whitespace-pre-wrap bg-gray-700 p-4 rounded">{result.script}</p>
               </div>
 
+              {result.audioUrl && (
+                <div className="bg-gray-800 rounded-lg p-6">
+                  <h2 className="text-2xl font-bold mb-4">생성된 음성</h2>
+                  <audio controls className="w-full" src={result.audioUrl} />
+                </div>
+              )}
+
               {result.images.length > 0 && (
                 <div className="bg-gray-800 rounded-lg p-6">
                   <h2 className="text-2xl font-bold mb-4">장면 이미지 ({result.images.length}개)</h2>
@@ -376,6 +368,9 @@ export default function ShortsPage() {
               )}
 
               <div className="flex gap-4">
+                 <button onClick={generateAudio} disabled={isAudioLoading || !result?.script} className="w-full bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                  {isAudioLoading ? '음성 생성 중...' : '🔊 음성 생성하기'}
+                </button>
                  <button onClick={downloadAll} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
                   모든 파일 다운로드
                 </button>
