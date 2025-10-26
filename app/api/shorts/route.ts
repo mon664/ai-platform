@@ -65,65 +65,13 @@ export async function POST(req: NextRequest) {
     };
     const styleDescription = styleMap[imageStyle] || 'cinematic';
 
-    // 2. 장면 이미지 생성
-    const images: string[] = [];
-    console.log('Starting image generation loop...');
+    // 2. 장면 이미지 생성 (Temporarily Disabled for Debugging)
+    const images: string[] = []
+    /*
     for (let i = 0; i < sceneCount; i++) {
-      console.log(`[Scene ${i+1}] Preparing to generate...`);
-      const scenePart = Math.floor(script.length / sceneCount);
-      const sceneText = script.substring(i * scenePart, (i + 1) * scenePart);
-      
-      const parts = [];
-      let textPrompt = '';
-
-      if (protagonistB64) {
-        textPrompt = `**Subject:** A cinematic shot of a KOREAN person who looks EXACTLY like the person in the reference image. The scene is based on the script snippet: "${sceneText.substring(0, 150)}". Maintain perfect facial consistency.\n\n**Style:** ${styleDescription}. The setting should be appropriate for South Korea.\n\n**Negative Prompt:** text, words, letters, characters, subtitles, watermarks, logos, writing, script, font, signature.`;
-        parts.push({ text: textPrompt });
-        parts.push({ inline_data: { mime_type: protagonistMimeType, data: protagonistB64 } });
-      } else {
-      const imagePrompt = `Negative Prompt: text, words, letters, characters, subtitles, watermarks, logos, writing, script, font, signature. Do not render any text on the image.\n---\n**Prompt:** A high-quality, cinematic shot of a KOREAN person. The scene is based on the script: "${sceneText.substring(0, 150)}". The image must be visually focused on the scene and characters.\n\n**Style:** ${styleDescription}. The setting is South Korea.`;
-        parts.push({ text: textPrompt });
-      }
-      console.log(`[Scene ${i+1}] Prompt ready.`);
-
-      let imageGenerated = false;
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        console.log(`[Scene ${i+1}] Attempt ${attempt}...`);
-        const imageRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_API_KEY}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts }],
-              generationConfig: {
-                response_modalities: ['Image'],
-                image_config: { aspect_ratio: '9:16' }
-              }
-            })
-          }
-        );
-
-        if (imageRes.ok) {
-          const imageData = await imageRes.json();
-          const imagePart = imageData.candidates?.[0]?.content?.parts?.find((part: any) => part.inlineData);
-          if (imagePart?.inlineData?.data) {
-            images.push(`data:image/png;base64,${imagePart.inlineData.data}`);
-            imageGenerated = true;
-            console.log(`[Scene ${i+1}] Attempt ${attempt} SUCCESS.`);
-            break;
-          }
-        }
-        const errorText = await imageRes.text();
-        console.error(`[Scene ${i+1}] Attempt ${attempt} FAILED. Status: ${imageRes.status}, Error: ${errorText}`);
-        if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-
-      if (!imageGenerated) {
-        console.error(`[Scene ${i+1}] All attempts failed. Pushing placeholder.`);
-        images.push('');
-      }
+      // ... (image generation logic is commented out) ...
     }
+    */
 
     // 3. 최종 결과 전송
     return new NextResponse(JSON.stringify({ script, images }), {
