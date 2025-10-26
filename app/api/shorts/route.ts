@@ -67,24 +67,28 @@ export async function POST(req: NextRequest) {
 
     // 2. 장면 이미지 생성
     const images: string[] = [];
+    console.log('Starting image generation loop...');
     for (let i = 0; i < sceneCount; i++) {
+      console.log(`[Scene ${i+1}] Preparing to generate...`);
       const scenePart = Math.floor(script.length / sceneCount);
       const sceneText = script.substring(i * scenePart, (i + 1) * scenePart);
       
       const parts = [];
-      let textPrompt = `**Subject:** A cinematic shot. The scene is based on the following script snippet: "${sceneText.substring(0, 150)}".\n\n**Style:** ${styleDescription}. The setting should be appropriate for South Korea.\n\n**Negative Prompt (what to avoid):** Do NOT include any text, words, letters, subtitles, or characters in the image.`;
+      let textPrompt = '';
 
       if (protagonistB64) {
-        textPrompt = `**Subject:** A cinematic shot of a KOREAN person who looks EXACTLY like the person in the reference image. The scene is based on the script snippet: "${sceneText.substring(0, 150)}". Maintain perfect facial consistency.\n\n**Style:** ${styleDescription}. The setting should be appropriate for South Korea.\n\n**Negative Prompt (what to avoid):** Do NOT include any text, words, letters, subtitles, or characters in the image.`;
+        textPrompt = `**Subject:** A cinematic shot of a KOREAN person who looks EXACTLY like the person in the reference image. The scene is based on the script snippet: "${sceneText.substring(0, 150)}". Maintain perfect facial consistency.\n\n**Style:** ${styleDescription}. The setting should be appropriate for South Korea.\n\n**Negative Prompt:** text, words, letters, characters, subtitles, watermarks, logos, writing, script, font, signature.`;
         parts.push({ text: textPrompt });
         parts.push({ inline_data: { mime_type: protagonistMimeType, data: protagonistB64 } });
       } else {
-      const imagePrompt = `**Prompt:** A high-quality, cinematic shot of a KOREAN person. The scene is based on the script: "${sceneText.substring(0, 150)}". The image must be visually focused on the scene and characters.\n\n**Style:** ${styleDescription}. The setting is South Korea.\n\n---\n**Negative Prompt:** text, words, letters, characters, subtitles, watermarks, logos, writing, script, font, signature.`;
+        textPrompt = `**Prompt:** A high-quality, cinematic shot of a KOREAN person. The scene is based on the script: "${sceneText.substring(0, 150)}". The image must be visually focused on the scene and characters.\n\n**Style:** ${styleDescription}. The setting is South Korea.\n\n---\n**Negative Prompt:** text, words, letters, characters, subtitles, watermarks, logos, writing, script, font, signature.`;
         parts.push({ text: textPrompt });
       }
+      console.log(`[Scene ${i+1}] Prompt ready.`);
 
       let imageGenerated = false;
       for (let attempt = 1; attempt <= 2; attempt++) {
+        console.log(`[Scene ${i+1}] Attempt ${attempt}...`);
         const imageRes = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_API_KEY}`,
           {
@@ -106,13 +110,17 @@ export async function POST(req: NextRequest) {
           if (imagePart?.inlineData?.data) {
             images.push(`data:image/png;base64,${imagePart.inlineData.data}`);
             imageGenerated = true;
+            console.log(`[Scene ${i+1}] Attempt ${attempt} SUCCESS.`);
             break;
           }
         }
+        const errorText = await imageRes.text();
+        console.error(`[Scene ${i+1}] Attempt ${attempt} FAILED. Status: ${imageRes.status}, Error: ${errorText}`);
         if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
       if (!imageGenerated) {
+        console.error(`[Scene ${i+1}] All attempts failed. Pushing placeholder.`);
         images.push('');
       }
     }
