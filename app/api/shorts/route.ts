@@ -47,35 +47,41 @@ export async function POST(req: NextRequest) {
     for (let i = 0; i < sceneCount; i++) {
       const scenePart = Math.floor(script.length / sceneCount)
       const sceneText = script.substring(i * scenePart, (i + 1) * scenePart)
-      const imagePrompt = `Scene ${i + 1} for the script: "${sceneText.substring(0, 100)}...". Create a high-quality, cinematic image featuring a KOREAN person in a setting appropriate for South Korea. The image should be visually appealing, professional, and suitable for a YouTube Short (9:16 aspect ratio). Style: modern, colorful, engaging.`
+      
+      const imagePrompt = `**Subject:** A cinematic shot of a KOREAN person. The scene is based on the following script snippet: "${sceneText.substring(0, 150)}".\n\n**Style:** Photorealistic, cinematic lighting, high detail, film quality, modern, colorful, engaging. The setting should be appropriate for South Korea.\n\n**Negative Prompt (what to avoid):** Do NOT include any text, words, letters, subtitles, or characters in the image.`
 
-      const imageRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: imagePrompt }] }],
-            generationConfig: {
-              response_modalities: ['Image'],
-              image_config: { aspect_ratio: '9:16' }
-            }
-          })
-        }
-      )
+      let imageGenerated = false;
+      for (let attempt = 1; attempt <= 2; attempt++) { // Retry up to 2 times
+        const imageRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: imagePrompt }] }],
+              generationConfig: {
+                response_modalities: ['Image'],
+                image_config: { aspect_ratio: '9:16' }
+              }
+            })
+          }
+        )
 
-      if (imageRes.ok) {
-        const imageData = await imageRes.json()
-        const imagePart = imageData.candidates?.[0]?.content?.parts?.find((part: any) => part.inlineData)
-        if (imagePart?.inlineData?.data) {
-          images.push(`data:image/png;base64,${imagePart.inlineData.data}`)
-        } else {
-          // If one image fails, we might want to add a placeholder or just note the failure
-           images.push(''); // Push an empty string as a placeholder
+        if (imageRes.ok) {
+          const imageData = await imageRes.json()
+          const imagePart = imageData.candidates?.[0]?.content?.parts?.find((part: any) => part.inlineData)
+          if (imagePart?.inlineData?.data) {
+            images.push(`data:image/png;base64,${imagePart.inlineData.data}`)
+            imageGenerated = true;
+            break; // Success, exit retry loop
+          }
         }
-      } else {
-        console.error('Image generation failed for scene', i + 1);
-        images.push(''); // Push an empty string as a placeholder
+        console.error(`Image generation attempt ${attempt} failed for scene ${i + 1}`);
+        if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 sec before retrying
+      }
+
+      if (!imageGenerated) {
+        images.push(''); // Push placeholder if all retries fail
       }
     }
 
