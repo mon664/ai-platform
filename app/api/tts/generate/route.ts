@@ -15,13 +15,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'TTS API 키가 설정되지 않았습니다' }, { status: 500 })
     }
 
-    const voiceMap: { [key: string]: string } = {
-      'Google 한국어': 'ko-KR-Neural2-A',
-      'Microsoft Heami': 'ko-KR-Neural2-B',
-      'default': 'ko-KR-Neural2-C'
-    }
-
-    const voiceName = voiceMap[voice] || voiceMap['default']
+    const voiceName = voice || 'ko-KR-Neural2-A'
 
     const res = await fetch(
       `https://texttospeech.googleapis.com/v1/text:synthesize?key=${API_KEY}`,
