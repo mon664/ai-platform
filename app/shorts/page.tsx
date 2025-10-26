@@ -18,6 +18,41 @@ export default function ShortsPage() {
   const [progress, setProgress] = useState('')
   const [result, setResult] = useState<ShortsResult | null>(null)
   const [error, setError] = useState('')
+  const [improving, setImproving] = useState(false)
+
+  const improveInput = async () => {
+    const input = mode === 'keyword' ? keyword : prompt
+
+    if (!input.trim()) {
+      setError('입력을 먼저 작성해주세요')
+      return
+    }
+
+    setImproving(true)
+    setError('')
+
+    try {
+      const res = await fetch('/api/shorts/improve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input, mode })
+      })
+
+      if (!res.ok) throw new Error('개선 실패')
+
+      const data = await res.json()
+
+      if (mode === 'keyword') {
+        setKeyword(data.improved)
+      } else {
+        setPrompt(data.improved)
+      }
+    } catch (err: any) {
+      setError(err.message || '오류가 발생했습니다')
+    } finally {
+      setImproving(false)
+    }
+  }
 
   const generateShorts = async () => {
     const input = mode === 'keyword' ? keyword : prompt
@@ -173,6 +208,13 @@ export default function ShortsPage() {
                 className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-pink-500"
               />
               <p className="text-sm text-gray-400 mt-2">간단한 주제를 입력하면 AI가 자동으로 대본을 생성합니다</p>
+              <button
+                onClick={improveInput}
+                disabled={improving}
+                className="w-full mt-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+              >
+                {improving ? 'AI 개선 중...' : '🤖 AI로 키워드 개선하기'}
+              </button>
             </>
           ) : (
             <>
@@ -184,6 +226,13 @@ export default function ShortsPage() {
                 className="w-full h-32 bg-gray-700 text-white rounded-lg p-4 resize-none focus:outline-none focus:ring-2 focus:ring-pink-500"
               />
               <p className="text-sm text-gray-400 mt-2">상세한 대본이나 시나리오를 입력하면 더 정확한 결과를 얻을 수 있습니다</p>
+              <button
+                onClick={improveInput}
+                disabled={improving}
+                className="w-full mt-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+              >
+                {improving ? 'AI 개선 중...' : '🤖 AI로 프롬프트 개선하기'}
+              </button>
             </>
           )}
         </div>
