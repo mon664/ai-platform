@@ -2,13 +2,10 @@
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useSession, signIn, signOut } from 'next-auth/react';
-import Image from 'next/image';
 
 export default function Navigation() {
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
-  const { data: session, status } = useSession();
 
   const menuItems = [
     { id: 'home', label: '🏠 홈', href: '/' },
@@ -58,28 +55,6 @@ export default function Navigation() {
             })}
           </div>
 
-          {/* Auth Section */}
-          <div className="flex items-center">
-            {status === 'loading' && (
-              <div className="w-8 h-8 bg-gray-700 rounded-full animate-pulse"></div>
-            )}
-            {status === 'unauthenticated' && (
-              <button onClick={() => signIn('github')} className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
-                로그인
-              </button>
-            )}
-            {status === 'authenticated' && session.user && (
-              <div className="flex items-center space-x-3">
-                {session.user.image && (
-                  <Image src={session.user.image} alt={session.user.name || 'User'} width={32} height={32} className="rounded-full" />
-                )}
-                <span className="text-sm font-medium text-gray-300 hidden sm:block">{session.user.name}</span>
-                <button onClick={() => signOut()} className="px-3 py-2 text-sm font-semibold text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
-                  로그아웃
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
