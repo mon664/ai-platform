@@ -4,6 +4,7 @@ import Image from 'next/image';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import WriteButton from './WriteButton'; // Import the new component
 
 // Define the structure of a post
 interface Post {
@@ -44,7 +45,10 @@ const BlogPage = () => {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-12">
-        <h1 className="text-5xl font-bold mb-12 text-center bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500">개발 블로그</h1>
+        <div className="flex justify-between items-center mb-12">
+          <h1 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500">개발 블로그</h1>
+          <WriteButton />
+        </div>
         
         {posts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
