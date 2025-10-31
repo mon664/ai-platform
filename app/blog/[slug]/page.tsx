@@ -1,64 +1,97 @@
+'use client';
 
-import fs from 'fs';
-import path from 'path';
-import matter from 'gray-matter';
-import { marked } from 'marked'; // Using 'marked' for server-side rendering of markdown
+import { useEffect, useState } from 'react';
+import { marked } from 'marked';
 
-// This function generates the paths for each post
-export const generateStaticParams = async () => {
-  const postsDirectory = path.join(process.cwd(), '_posts');
-  if (!fs.existsSync(postsDirectory)) {
-    return [];
-  }
-  const files = fs.readdirSync(postsDirectory);
-  return files.map((filename) => ({
-    slug: filename.replace('.md', ''),
-  }));
-};
+interface Post {
+  id: number;
+  slug: string;
+  title: string;
+  content: string;
+  created_at: string;
+}
 
-// This function fetches the data for a single post
-const getPost = (slug: string) => {
-  const postsDirectory = path.join(process.cwd(), '_posts');
-  const filePath = path.join(postsDirectory, `${slug}.md`);
-  
-  if (!fs.existsSync(filePath)) {
-    return null;
-  }
+export default function PostPage({ params }: { params: { slug: string } }) {
+  const [post, setPost] = useState<Post | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  const fileContents = fs.readFileSync(filePath, 'utf8');
-  const { data: frontmatter, content } = matter(fileContents);
-  
-  const htmlContent = marked(content);
+  useEffect(() => {
+    fetch(`/api/blog/${params.slug}`)
+      .then((res) => {
+        if (res.status === 404) {
+          setNotFound(true);
+          setLoading(false);
+          return null;
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (data) {
+          setPost(data.post);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setNotFound(true);
+        setLoading(false);
+      });
+  }, [params.slug]);
 
-  return {
-    frontmatter,
-    content: htmlContent,
-  };
-};
-
-const PostPage = ({ params }: { params: { slug: string } }) => {
-  const post = getPost(params.slug);
-
-  if (!post) {
+  if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <h1 className="text-4xl font-bold">404 - 페이지를 찾을 수 없습니다.</h1>
-        <p className="mt-4">요청하신 게시물을 찾을 수 없습니다.</p>
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <p className="text-2xl text-gray-400">로딩 중...</p>
       </div>
     );
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <article className="prose lg:prose-xl dark:prose-invert mx-auto">
-        <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold mb-2">{post.frontmatter.title}</h1>
-            <p className="text-gray-500">{post.frontmatter.date}</p>
+  if (notFound || !post) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">404 - 페이지를 찾을 수 없습니다</h1>
+          <p className="text-gray-400 mb-8">요청하신 게시물을 찾을 수 없습니다.</p>
+          <a href="/blog" className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">
+            블로그 목록으로
+          </a>
         </div>
-        <div dangerouslySetInnerHTML={{ __html: post.content }} />
-      </article>
+      </div>
+    );
+  }
+
+  const htmlContent = marked(post.content);
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white">
+      <div className="container mx-auto px-4 py-12 max-w-4xl">
+        <article className="bg-gray-800 rounded-xl p-8">
+          <div className="mb-8 border-b border-gray-700 pb-6">
+            <h1 className="text-4xl font-bold mb-4 text-gray-100">{post.title}</h1>
+            <p className="text-gray-400">
+              {new Date(post.created_at).toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </p>
+          </div>
+
+          <div
+            className="prose prose-invert prose-lg max-w-none"
+            dangerouslySetInnerHTML={{ __html: htmlContent }}
+          />
+
+          <div className="mt-12 pt-6 border-t border-gray-700">
+            <a
+              href="/blog"
+              className="inline-block px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+            >
+              ← 목록으로 돌아가기
+            </a>
+          </div>
+        </article>
+      </div>
     </div>
   );
-};
-
-export default PostPage;
+}

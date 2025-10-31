@@ -1,6 +1,18 @@
+import type { Env } from '@/app/types/cloudflare';
+
 export const runtime = 'edge';
 
-export async function POST(request: Request) {
+// 제목을 URL-safe slug로 변환
+function createSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9가-힣]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    + '-' + Date.now();
+}
+
+export async function POST(request: Request, { env }: { env: Env }) {
   try {
     const { title, content } = await request.json();
 
@@ -11,24 +23,40 @@ export async function POST(request: Request) {
       );
     }
 
-    // TODO: 실제 저장 로직 구현
-    // 옵션 1: Cloudflare KV
-    // 옵션 2: Cloudflare D1
-    // 옵션 3: GitHub API (파일로 커밋)
+    // D1 데이터베이스가 바인딩되지 않은 경우
+    if (!env?.DB) {
+      console.error('D1 database not bound');
+      return new Response(
+        JSON.stringify({ error: 'Database not configured' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
-    // 현재는 임시로 성공 응답만 반환
-    console.log('Blog post received:', { title, contentLength: content.length });
+    const slug = createSlug(title);
+
+    // D1 데이터베이스에 저장
+    const result = await env.DB.prepare(
+      'INSERT INTO posts (slug, title, content) VALUES (?, ?, ?)'
+    )
+      .bind(slug, title, content)
+      .run();
+
+    if (!result.success) {
+      throw new Error('Failed to insert post');
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Blog post received (저장 기능은 추후 구현 예정)',
-        title
+        slug,
+        title,
+        message: '블로그 게시글이 저장되었습니다!'
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
+    console.error('Error creating blog post:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
