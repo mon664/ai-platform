@@ -40,7 +40,7 @@ export default function Navigation() {
   return (
     <div className="bg-gray-900/60 backdrop-blur-sm border-b border-gray-700/50 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-center overflow-x-auto scrollbar-hide">
+        <div className="flex justify-start">
           {menuItems.map(item => {
             if (item.subItems) {
               return (
