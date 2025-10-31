@@ -2,6 +2,8 @@
 import NextAuth from 'next-auth';
 import GithubProvider from 'next-auth/providers/github';
 
+export const runtime = 'edge'; // Add this line
+
 if (!process.env.GITHUB_ID || !process.env.GITHUB_SECRET) {
   throw new Error('GITHUB_ID and GITHUB_SECRET environment variables are not set.');
 }
