@@ -1,7 +1,5 @@
 import type { Env, BlogPost } from '@/app/types/cloudflare';
 
-export const runtime = 'edge';
-
 export async function GET(
   request: Request,
   { params, env }: { params: { slug: string }; env: Env }

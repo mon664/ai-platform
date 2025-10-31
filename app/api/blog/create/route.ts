@@ -1,7 +1,5 @@
 import type { Env } from '@/app/types/cloudflare';
 
-export const runtime = 'edge';
-
 // 제목을 URL-safe slug로 변환
 function createSlug(title: string): string {
   return title

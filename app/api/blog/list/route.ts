@@ -1,7 +1,5 @@
 import type { Env, BlogPost } from '@/app/types/cloudflare';
 
-export const runtime = 'edge';
-
 export async function GET(request: Request, { env }: { env: Env }) {
   try {
     // D1 데이터베이스가 바인딩되지 않은 경우
