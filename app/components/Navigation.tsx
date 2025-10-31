@@ -9,7 +9,8 @@ export default function Navigation() {
     { id: 'character', label: '👤 캐릭터', href: '/character' },
     { id: 'tts', label: '🎤 음성', href: '/tts' },
     { id: 'shorts', label: '🎬 쇼츠', href: '/shorts' },
-    { id: 'story', label: '📖 스토리', href: '/story' }
+    { id: 'story', label: '📖 스토리', href: '/story' },
+    { id: 'blog', label: '📝 블로그', href: '/blog' }
   ]
 
   return (
