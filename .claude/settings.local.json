@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//g/내 드라이브/ai소스/claude/ai-story-generator/**)",
+      "Bash(npx @cloudflare/next-on-pages)",
+      "Bash(npm run build:*)",
+      "Bash(dir out:*)",
+      "Bash(git add:*)",
+      "Bash(git push)",
+      "Bash(npx @cloudflare/next-on-pages --output .vercel/output)",
+      "Bash(npm install:*)",
+      "Bash(vercel build)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(npx create-next-app:*)",
+      "Bash(npx create-next-app@latest ai-story-generator --typescript --tailwind --app --no-src-dir --import-alias \"@/*\" --eslint --turbopack --skip-install)",
+      "Bash(where:*)",
+      "Bash(gemini:*)",
+      "Bash(git commit:*)",
+      "Bash(git rm:*)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

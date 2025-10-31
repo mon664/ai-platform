@@ -1,0 +1,55 @@
+GEMINI CLI - DEBUGGING TASK
+
+Problem: "No scenes generated" 오류 발생
+File: C:\projects\ai-platform\app\api\generate\route.ts
+
+분석:
+- images 배열이 비어서 리턴됨 (106줄)
+- 에러 로깅이 없어서 어디서 실패하는지 모름
+
+해야 할 일:
+
+1. 각 API 호출 후 console.log로 응답 확인
+2. 에러 발생 시 상세 로그 추가
+3. images 배열이 비어있으면 에러 리턴
+
+구체적 수정:
+
+Step 1: 50줄 뒤에 추가
+```typescript
+console.log('[DEBUG] Face description:', face)
+```
+
+Step 2: 75줄 뒤에 추가
+```typescript
+console.log('[DEBUG] Scenes array:', scenes)
+```
+
+Step 3: 99-104줄을 이렇게 수정
+```typescript
+if (imagenRes.ok) {
+  const data = await imagenRes.json()
+  console.log('[DEBUG] Image generation response:', JSON.stringify(data))
+  const imageData = data.candidates[0].content.parts[0].inlineData.data
+  images.push(`data:image/jpeg;base64,${imageData}`)
+} else {
+  const errText = await imagenRes.text()
+  console.error('[ERROR] Image generation failed:', errText)
+}
+```
+
+Step 4: 105줄 뒤에 추가 (return 전에)
+```typescript
+console.log('[DEBUG] Total images generated:', images.length)
+
+if (images.length === 0) {
+  return new Response(JSON.stringify({ error: 'Failed to generate images' }), { status: 500 })
+}
+```
+
+수정 완료 후:
+1. git add app/api/generate/route.ts
+2. git commit -m "debug: add detailed logging for image generation"
+3. git push
+
+그 다음 5분 뒤 Cloudflare 로그 확인해서 어디서 실패하는지 알려줘.

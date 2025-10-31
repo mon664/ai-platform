@@ -68,13 +68,18 @@ export default function PostPage({ params }: { params: { slug: string } }) {
         <article className="bg-gray-800 rounded-xl p-8">
           <div className="mb-8 border-b border-gray-700 pb-6">
             <h1 className="text-4xl font-bold mb-4 text-gray-100">{post.title}</h1>
-            <p className="text-gray-400">
-              {new Date(post.created_at).toLocaleDateString('ko-KR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </p>
+            <div className="flex justify-between items-center">
+              <p className="text-gray-400">
+                {new Date(post.created_at).toLocaleDateString('ko-KR', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </p>
+              <a href={`/blog/${post.slug}/edit`} className="text-sm text-blue-400 hover:text-blue-300">
+                수정
+              </a>
+            </div>
           </div>
 
           <div

@@ -1,0 +1,74 @@
+URGENT FIX NEEDED:
+
+File: C:\projects\ai-platform\app\api\generate\route.ts (lines 77-102)
+
+Problem: "No scenes generated" error - Imagen API response format is wrong
+
+Fix: Replace Imagen 4 code with Gemini 2.0 image generation
+
+Replace this code (lines 77-102):
+```
+// Imagen 4 - Image generation
+const images: string[] = []
+
+for (const scene of scenes) {
+  const imagenRes = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${process.env.VERTEX_AI_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        instances: [{
+          prompt: `${scene}\n\nCharacter: ${face}`
+        }],
+        parameters: {
+          numberOfImages: 1,
+          aspectRatio: '16:9'
+        }
+      })
+    }
+  )
+
+  if (imagenRes.ok) {
+    const data = await imagenRes.json()
+    images.push(data.predictions[0].bytesBase64Encoded)
+  }
+}
+```
+
+With this code:
+```
+// Gemini 2.0 - Image generation
+const images: string[] = []
+
+for (const scene of scenes) {
+  const imagenRes = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `${scene}\n\nCharacter: ${face}`
+          }]
+        }],
+        generationConfig: {
+          responseModalities: ["IMAGE"]
+        }
+      })
+    }
+  )
+
+  if (imagenRes.ok) {
+    const data = await imagenRes.json()
+    const imageData = data.candidates[0].content.parts[0].inlineData.data
+    images.push(`data:image/jpeg;base64,${imageData}`)
+  }
+}
+```
+
+After fixing:
+1. git add app/api/generate/route.ts
+2. git commit -m "fix: use Gemini 2.0 image generation instead of Imagen"
+3. git push
