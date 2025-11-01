@@ -103,46 +103,71 @@ export async function POST(req: NextRequest) {
 
     // 3. 장면 이미지 생성
     const images: string[] = []
-    for (const scene of scenes.slice(0, sceneCount || scenes.length)) {
-      const body: any = {
-        contents: [{
-          parts: [
-            { text: `Generate a keyframe image for this scene (Korean): ${scene}\n\nStyle: ${styleDescription}` }
-          ]
-        }],
-        generationConfig: {
-          response_modalities: ['Image'],
-          image_config: { aspect_ratio: '9:16' }
-        }
-      };
-      if (protagonistB64 && protagonistMimeType) {
-        body.contents[0].parts.push({
-          inline_data: { mime_type: protagonistMimeType, data: protagonistB64 }
-        });
-      }
+    const imageErrors: string[] = []
 
-      const imgRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        }
-      );
-      if (!imgRes.ok) {
-        // Skip this scene but continue others
-        continue
-      }
+    for (let i = 0; i < scenes.slice(0, sceneCount || scenes.length).length; i++) {
+      const scene = scenes[i];
+
       try {
+        const body: any = {
+          contents: [{
+            parts: [
+              { text: `Generate a keyframe image for this scene (Korean): ${scene}\n\nStyle: ${styleDescription}` }
+            ]
+          }],
+          generationConfig: {
+            response_modalities: ['Image'],
+            image_config: { aspect_ratio: '9:16' }
+          }
+        };
+
+        if (protagonistB64 && protagonistMimeType) {
+          body.contents[0].parts.push({
+            inline_data: { mime_type: protagonistMimeType, data: protagonistB64 }
+          });
+        }
+
+        const imgRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          }
+        );
+
+        if (!imgRes.ok) {
+          const errorText = await imgRes.text();
+          console.error(`Image ${i + 1} generation failed:`, errorText);
+          imageErrors.push(`장면 ${i + 1}: API 오류`);
+          continue;
+        }
+
         const data = await imgRes.json();
         const imagePart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
         const b64 = imagePart?.inlineData?.data;
-        if (b64) images.push(`data:image/png;base64,${b64}`)
-      } catch {}
+
+        if (b64) {
+          images.push(`data:image/png;base64,${b64}`)
+          console.log(`Image ${i + 1}/${sceneCount} generated successfully`);
+        } else {
+          console.error(`Image ${i + 1} has no data`);
+          imageErrors.push(`장면 ${i + 1}: 데이터 없음`);
+        }
+      } catch (error: any) {
+        console.error(`Image ${i + 1} generation error:`, error);
+        imageErrors.push(`장면 ${i + 1}: ${error.message || '알 수 없는 오류'}`);
+      }
     }
 
     // 4. 최종 결과 전송
-    return new NextResponse(JSON.stringify({ script, images }), {
+    return new NextResponse(JSON.stringify({
+      script,
+      images,
+      imageErrors: imageErrors.length > 0 ? imageErrors : undefined,
+      totalScenes: sceneCount,
+      successfulImages: images.length
+    }), {
       headers: { 'Content-Type': 'application/json' }
     });
 

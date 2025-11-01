@@ -6,6 +6,9 @@ interface ShortsResult {
   script: string
   audioUrl: string
   images: string[]
+  imageErrors?: string[]
+  totalScenes?: number
+  successfulImages?: number
 }
 
 const availableFonts = [
@@ -112,8 +115,16 @@ export default function ShortsPage() {
       setResult({
         script: data.script,
         images: data.images,
-        audioUrl: '', 
+        audioUrl: '',
+        imageErrors: data.imageErrors,
+        totalScenes: data.totalScenes,
+        successfulImages: data.successfulImages
       });
+
+      // 이미지 생성 오류가 있으면 사용자에게 알림
+      if (data.imageErrors && data.imageErrors.length > 0) {
+        setError(`⚠️ 일부 이미지 생성 실패 (${data.successfulImages}/${data.totalScenes} 성공):\n${data.imageErrors.join('\n')}`);
+      }
     } catch (err: any) {
       setError(err.message || '오류가 발생했습니다');
     } finally {
@@ -400,7 +411,24 @@ export default function ShortsPage() {
 
               {result.images.length > 0 && (
                 <div className="bg-gray-800 rounded-lg p-6">
-                  <h2 className="text-2xl font-bold mb-4">장면 이미지 ({result.images.length}개)</h2>
+                  <h2 className="text-2xl font-bold mb-4">
+                    장면 이미지 ({result.images.length}개)
+                    {result.totalScenes && result.images.length < result.totalScenes && (
+                      <span className="text-yellow-400 text-base ml-2">
+                        ({result.totalScenes - result.images.length}개 생성 실패)
+                      </span>
+                    )}
+                  </h2>
+                  {result.imageErrors && result.imageErrors.length > 0 && (
+                    <div className="bg-yellow-900/30 border border-yellow-600 rounded-lg p-3 mb-4">
+                      <p className="text-yellow-200 text-sm font-semibold mb-1">⚠️ 실패한 이미지:</p>
+                      <ul className="text-yellow-300 text-sm list-disc list-inside">
+                        {result.imageErrors.map((err, i) => (
+                          <li key={i}>{err}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {result.images.map((img, i) => (
                       <div key={i} className="relative group">
