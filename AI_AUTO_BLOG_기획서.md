@@ -847,3 +847,407 @@ export const PROMPT_TEMPLATES = {
 7. ✅ 모니터링 및 최적화
 
 **질문이나 수정 사항이 있으면 이 파일을 업데이트하세요!**
+
+---
+
+## 🔗 현재 프로젝트 통합 가이드
+
+### 📍 프로젝트 정보
+
+**현재 프로젝트:** AI Content Platform
+**배포 URL:** https://ai-platform-one.vercel.app
+**GitHub:** https://github.com/mon664/ai-platform
+**배포 플랫폼:** Vercel
+
+---
+
+### 🔑 사용할 API 키 (이미 설정됨)
+
+```bash
+# Vercel 환경 변수 (Settings → Environment Variables)
+
+# AI 텍스트 생성
+GEMINI_API_KEY=AIzaSy... (메인 키)
+
+# 이미지 생성 (같은 키 사용 가능)
+Cloud_all_API=AIzaSyCDznEqbR15saENX8cK1MOLBT-f9wgUxfQ
+
+# 데이터베이스 (블로그 저장)
+REDIS_URL=redis://default:***@redis-11417.c340.ap-northeast-2-1.ec2.redns.redis-cloud.com:11417
+
+# 인증 (관리자만 접근)
+JWT_SECRET=your-jwt-secret
+ADMIN_EMAIL=your-email@example.com
+ADMIN_PASSWORD=your-password
+
+# ⭐ 새로 추가 필요
+CRON_SECRET=random-secret-for-cron-job-authentication
+```
+
+**CRON_SECRET 생성 방법:**
+```bash
+# 랜덤 문자열 생성 (32자 이상 권장)
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+---
+
+### 📱 Navigation 메뉴 추가
+
+**파일:** `app/components/Navigation.tsx`
+
+**추가할 메뉴:**
+```typescript
+// 기존 menuItems 배열에 추가
+const menuItems = [
+  { id: 'home', label: '🏠 홈', href: '/' },
+  {
+    id: 'youtube',
+    label: '🎬 유튜브',
+    // ... 기존 서브메뉴
+  },
+  { id: 'blog', label: '📝 블로그', href: '/blog' },
+  // ⭐ 여기 추가
+  { id: 'auto-blog', label: '🤖 자동블로그', href: '/auto-blog' },
+];
+```
+
+---
+
+### 🛡️ 인증 적용
+
+자동 블로그 관리 대시보드는 **관리자만 접근 가능**해야 합니다.
+
+**적용 방법:**
+
+1. **대시보드 페이지 보호**
+```typescript
+// app/auto-blog/page.tsx
+'use client'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { isAuthenticated } from '@/lib/client-auth'
+
+export default function AutoBlogDashboard() {
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push('/admin/login')
+    }
+  }, [])
+
+  // ... 나머지 코드
+}
+```
+
+2. **모든 API 라우트 보호**
+```typescript
+// app/api/auto-blog/*/route.ts
+import { requireAuth } from '@/lib/auth'
+
+export async function POST(req: NextRequest) {
+  const auth = requireAuth(req);
+  if (!auth.authorized) {
+    return NextResponse.json({ error: auth.error }, { status: 401 });
+  }
+
+  // ... 나머지 코드
+}
+```
+
+3. **Cron Job만 예외** (인증 방식 다름)
+```typescript
+// app/api/cron/auto-blog/route.ts
+// JWT 대신 CRON_SECRET 사용
+const authHeader = req.headers.get('authorization')
+if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+}
+```
+
+---
+
+### 📦 설치할 패키지 (추가 없음!)
+
+**현재 프로젝트에 이미 설치됨:**
+- ✅ `jsonwebtoken` - JWT 인증
+- ✅ `ioredis` - Redis 연결
+- ✅ Next.js, React, TypeScript
+
+**추가 설치 필요 없음!** 👍
+
+---
+
+### 🚀 배포 방법
+
+#### 1. 코드 작성 후 Git 푸시
+
+```bash
+# 파일 추가
+git add app/auto-blog/ app/api/auto-blog/ app/api/cron/ lib/auto-blog/ vercel.json
+
+# 커밋
+git commit -m "feat: add AI auto-blog generator system"
+
+# 푸시 (자동 배포됨)
+git push
+```
+
+#### 2. Vercel 환경 변수 추가
+
+**Vercel 대시보드 접속:**
+1. https://vercel.com
+2. `ai-platform` 프로젝트 선택
+3. **Settings** → **Environment Variables**
+
+**추가할 변수:**
+```bash
+Name: CRON_SECRET
+Value: [생성한 랜덤 문자열]
+Environments: ✅ Production ✅ Preview ✅ Development
+```
+
+**Save** 클릭!
+
+#### 3. Vercel Cron 설정 확인
+
+**파일:** `vercel.json` (프로젝트 루트)
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron/auto-blog",
+      "schedule": "0 0,9 * * *"
+    }
+  ]
+}
+```
+
+**스케줄 설명:**
+- `0 0,9 * * *` = UTC 기준 0시, 9시
+- **한국 시간:** 오전 9시, 오후 6시 ✅
+
+**배포 후 자동 적용됨!**
+
+#### 4. 배포 확인
+
+```bash
+# 터미널에서 (또는 자동 배포 대기)
+vercel --prod
+
+# 완료 후 확인
+# 1. https://ai-platform-one.vercel.app/auto-blog (대시보드)
+# 2. Vercel 대시보드 → Cron Jobs 탭 확인
+```
+
+---
+
+### 🔍 배포 후 체크리스트
+
+**1. 환경 변수 확인**
+```
+✅ GEMINI_API_KEY
+✅ REDIS_URL
+✅ JWT_SECRET
+✅ ADMIN_EMAIL
+✅ ADMIN_PASSWORD
+✅ CRON_SECRET (새로 추가)
+```
+
+**2. 페이지 접근 테스트**
+```
+✅ https://ai-platform-one.vercel.app/auto-blog
+   → 로그인 안 하면 → /admin/login 리다이렉트
+   → 로그인 후 → 대시보드 표시
+```
+
+**3. API 테스트**
+```bash
+# 로그인
+curl -X POST https://ai-platform-one.vercel.app/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"admin123"}'
+
+# 응답에서 token 복사
+
+# 수동 생성 테스트
+curl -X POST https://ai-platform-one.vercel.app/api/auto-blog/manual \
+  -H "Authorization: Bearer [token]"
+```
+
+**4. Cron Job 확인**
+```
+Vercel 대시보드 → Settings → Cron Jobs
+→ /api/cron/auto-blog 표시되는지 확인
+→ Next Run 시간 확인
+```
+
+**5. 첫 실행 로그 확인**
+```
+Vercel 대시보드 → Deployments → 최신 배포 클릭
+→ Functions 탭 → /api/cron/auto-blog 클릭
+→ 로그 확인
+```
+
+---
+
+### 🧪 테스트 시나리오
+
+#### 시나리오 1: 수동 생성 테스트
+
+1. https://ai-platform-one.vercel.app/admin/login 접속
+2. 로그인
+3. https://ai-platform-one.vercel.app/auto-blog 접속
+4. "지금 바로 생성하기" 버튼 클릭
+5. 생성 진행 상황 표시
+6. 완료 후 https://ai-platform-one.vercel.app/blog 에서 확인
+
+#### 시나리오 2: 자동 생성 테스트
+
+1. Cron Job 시간 대기 (오전 9시 또는 오후 6시)
+2. 또는 Vercel 대시보드에서 수동 트리거
+3. 생성 완료 확인
+4. /blog 페이지에서 새 글 확인
+
+#### 시나리오 3: 에러 핸들링 테스트
+
+1. API 키 일부러 잘못 설정
+2. 수동 생성 실행
+3. 에러 메시지 표시 확인
+4. Redis에 에러 로그 저장 확인
+
+---
+
+### 📊 모니터링 방법
+
+#### 1. Vercel 대시보드
+```
+Deployments → Functions → /api/cron/auto-blog
+→ Invocations (실행 횟수)
+→ Duration (실행 시간)
+→ Errors (에러 발생)
+```
+
+#### 2. Redis 데이터 확인
+```bash
+# Redis CLI 접속
+redis-cli -u $REDIS_URL
+
+# 자동 생성 이력 확인
+KEYS auto-blog:history:*
+
+# 최근 이력 조회
+GET auto-blog:history:2025-11-01T09:00:00
+```
+
+#### 3. 생성된 블로그 확인
+```
+https://ai-platform-one.vercel.app/blog
+→ 최신 글 2개 확인 (하루 2건)
+```
+
+---
+
+### 🐛 트러블슈팅
+
+#### 문제 1: Cron Job이 실행 안됨
+**원인:** CRON_SECRET 미설정 또는 스케줄 오류
+**해결:**
+1. Vercel 환경 변수에서 `CRON_SECRET` 확인
+2. `vercel.json` 스케줄 확인
+3. Vercel Cron Jobs 탭에서 상태 확인
+
+#### 문제 2: 이미지 생성 실패
+**원인:** Gemini Image API 레이트 리밋
+**해결:**
+1. 이미지 개수 줄이기 (5개 → 3개)
+2. 재시도 로직 추가
+3. API 키 쿼터 확인
+
+#### 문제 3: 블로그 게시 실패
+**원인:** Redis 연결 오류
+**해결:**
+1. `REDIS_URL` 환경 변수 확인
+2. Redis 서버 상태 확인
+3. 네트워크 방화벽 확인
+
+#### 문제 4: 인증 오류
+**원인:** JWT_SECRET 미설정
+**해결:**
+1. Vercel 환경 변수 확인
+2. 재배포 필요 시 `vercel --prod`
+
+---
+
+### 💡 개발 팁
+
+#### 로컬 테스트 방법
+
+```bash
+# 로컬 환경 변수 설정
+# .env.local 파일 생성
+GEMINI_API_KEY=...
+REDIS_URL=...
+JWT_SECRET=test-secret
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=admin123
+CRON_SECRET=test-cron-secret
+
+# 로컬 서버 실행
+npm run dev
+
+# 브라우저에서 테스트
+http://localhost:3000/auto-blog
+```
+
+#### API 직접 호출 테스트
+
+```bash
+# Cron Job 시뮬레이션 (로컬)
+curl -X GET http://localhost:3000/api/cron/auto-blog \
+  -H "Authorization: Bearer test-cron-secret"
+
+# 수동 생성 (로컬)
+# 1. 로그인해서 token 받기
+# 2. 수동 생성 API 호출
+curl -X POST http://localhost:3000/api/auto-blog/manual \
+  -H "Authorization: Bearer [token]"
+```
+
+---
+
+### 🎯 배포 완료 후 확인사항
+
+**완료 체크리스트:**
+
+- [ ] Vercel 환경 변수 6개 설정 완료
+- [ ] `vercel.json` Cron 설정 확인
+- [ ] Git 푸시 및 자동 배포 완료
+- [ ] /auto-blog 페이지 접속 가능
+- [ ] 로그인 후 대시보드 표시
+- [ ] 수동 생성 테스트 성공
+- [ ] 블로그 게시 확인
+- [ ] Navigation 메뉴 추가됨
+- [ ] Cron Job 등록 확인 (Vercel 대시보드)
+- [ ] 첫 자동 생성 실행 대기 (오전 9시 또는 오후 6시)
+
+**모든 항목 체크 완료 시 → 운영 시작! 🎉**
+
+---
+
+### 📞 추가 도움말
+
+**구현 중 막히면:**
+1. 이 MD 파일의 해당 섹션 다시 확인
+2. `프로젝트_진행상황.md` 파일 참고
+3. 기존 코드 (`app/shorts/`, `app/blog/`) 참고
+4. Vercel 로그 확인
+
+**다른 AI에게 인계 시:**
+"AI_AUTO_BLOG_기획서.md 파일을 읽고 Phase 1부터 구현해줘"
+
+---
+
+**이제 모든 정보가 준비되었습니다! 🚀**
