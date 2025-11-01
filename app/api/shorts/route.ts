@@ -53,6 +53,26 @@ export async function POST(req: NextRequest) {
     const scriptData = await scriptRes.json();
     const script = scriptData.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
+    // 2. 장면 프롬프트 생성 (script 기반으로 sceneCount개 JSON 배열 요청)
+    const scenesReq = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `From the following Korean YouTube Shorts script, extract ${sceneCount} concise scene descriptions for image generation. One line per scene, vivid and specific. Return ONLY a JSON array of strings.\n\nSCRIPT:\n"""${script}"""`
+            }]
+          }]
+        })
+      }
+    );
+    if (!scenesReq.ok) throw new Error('장면 프롬프트 생성 실패');
+    const scenesJson = await scenesReq.json();
+    const scenesTextRaw = scenesJson.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+    const scenes: string[] = JSON.parse(String(scenesTextRaw).replace(/```json\n?|\n?```/g, ''));
+
     // Style mapping
     const styleMap: { [key: string]: string } = {
       photorealistic: 'hyper-realistic, photorealistic, 8k',
@@ -63,15 +83,46 @@ export async function POST(req: NextRequest) {
     };
     const styleDescription = styleMap[imageStyle] || 'cinematic';
 
-    // 2. 장면 이미지 생성 (Temporarily Disabled for Debugging)
+    // 3. 장면 이미지 생성
     const images: string[] = []
-    /*
-    for (let i = 0; i < sceneCount; i++) {
-      // ... (image generation logic is commented out) ...
-    }
-    */
+    for (const scene of scenes.slice(0, sceneCount)) {
+      const body: any = {
+        contents: [{
+          parts: [
+            { text: `Generate a keyframe image for this scene (Korean): ${scene}\n\nStyle: ${styleDescription}` }
+          ]
+        }],
+        generationConfig: {
+          response_modalities: ['Image'],
+          image_config: { aspect_ratio: '9:16' }
+        }
+      };
+      if (protagonistB64 && protagonistMimeType) {
+        body.contents[0].parts.push({
+          inline_data: { mime_type: protagonistMimeType, data: protagonistB64 }
+        });
+      }
 
-    // 3. 최종 결과 전송
+      const imgRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }
+      );
+      if (!imgRes.ok) {
+        const errText = await imgRes.text();
+        throw new Error(`이미지 생성 실패: ${errText.substring(0, 200)}`);
+      }
+      const data = await imgRes.json();
+      const imagePart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+      const b64 = imagePart?.inlineData?.data;
+      if (!b64) throw new Error('이미지 데이터 없음');
+      images.push(`data:image/png;base64,${b64}`);
+    }
+
+    // 4. 최종 결과 전송
     return new NextResponse(JSON.stringify({ script, images }), {
       headers: { 'Content-Type': 'application/json' }
     });

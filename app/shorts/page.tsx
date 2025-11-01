@@ -33,6 +33,7 @@ export default function ShortsPage() {
   const [error, setError] = useState('')
   const [improving, setImproving] = useState(false)
   const [isAudioLoading, setIsAudioLoading] = useState(false)
+  const [regeneratingIndex, setRegeneratingIndex] = useState<number | null>(null)
 
   // TTS Settings
   const [ttsVoice, setTtsVoice] = useState('ko-KR-Neural2-A')
@@ -220,6 +221,40 @@ export default function ShortsPage() {
     setIsEditorOpen(true);
   }
 
+  const regenerateImage = async (index: number) => {
+    if (!result) return;
+    try {
+      setRegeneratingIndex(index)
+      // Derive a simple per-scene prompt from script segments
+      const total = result.images.length || sceneCount
+      const segLen = Math.max(1, Math.floor(result.script.length / total))
+      const scene = result.script.substring(index * segLen, (index + 1) * segLen).trim()
+
+      const fd = new FormData()
+      fd.append('scene', scene || `Scene ${index + 1}`)
+      fd.append('imageStyle', imageStyle)
+      if (protagonistImage) fd.append('protagonistImage', protagonistImage)
+
+      const res = await fetch('/api/shorts/regenerate', { method: 'POST', body: fd })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({} as any))
+        throw new Error(err.error || '이미지 재생성 실패')
+      }
+      const data = await res.json()
+      if (!data.image) throw new Error('이미지 데이터 없음')
+      setResult(prev => {
+        if (!prev) return prev
+        const next = [...prev.images]
+        next[index] = data.image
+        return { ...prev, images: next }
+      })
+    } catch (e: any) {
+      setError(e.message || '이미지 재생성 중 오류')
+    } finally {
+      setRegeneratingIndex(null)
+    }
+  }
+
   const saveAndClose = () => {
     if (!canvasRef.current || editingImageIndex === null || !result) return;
     const newDataUrl = canvasRef.current.toDataURL('image/png');
@@ -246,27 +281,26 @@ export default function ShortsPage() {
 
   const downloadAll = () => {
     if (!result) return;
-    const scriptBlob = new Blob([result.script || ''], { type: 'text/plain' })
-    const scriptUrl = URL.createObjectURL(scriptBlob)
-    const scriptLink = document.createElement('a')
-    scriptLink.href = scriptUrl
-    scriptLink.download = `script-${Date.now()}.txt`
-    scriptLink.click()
+    // Deprecated: previously downloaded all (script, images, audio)
+    // Keeping function for backward compatibility (no-op here)
+  }
 
-    result.images.forEach((img, i) => {
-      if (!img) return;
-      const link = document.createElement('a')
-      link.href = img
-      link.download = `scene-${i + 1}.png`
-      link.click()
-    })
+  const downloadScript = () => {
+    if (!result?.script) return;
+    const scriptBlob = new Blob([result.script], { type: 'text/plain' });
+    const url = URL.createObjectURL(scriptBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `script-${Date.now()}.txt`;
+    link.click();
+  }
 
-    if (result.audioUrl) {
-      const audioLink = document.createElement('a');
-      audioLink.href = result.audioUrl;
-      audioLink.download = `audio-${Date.now()}.wav`;
-      audioLink.click();
-    }
+  const downloadAudio = () => {
+    if (!result?.audioUrl) return;
+    const link = document.createElement('a');
+    link.href = result.audioUrl;
+    link.download = `audio-${Date.now()}.wav`;
+    link.click();
   }
 
   return (
@@ -371,8 +405,11 @@ export default function ShortsPage() {
                     {result.images.map((img, i) => (
                       <div key={i} className="relative group">
                         <img src={img} alt={`Scene ${i + 1}`} className="w-full rounded-lg" />
-                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={() => openEditor(i)} className="text-white font-bold py-2 px-4 rounded bg-purple-600 hover:bg-purple-700">자막 편집</button>
+                          <button onClick={() => regenerateImage(i)} disabled={regeneratingIndex===i} className="text-white font-bold py-2 px-4 rounded bg-pink-600 hover:bg-pink-700 disabled:bg-gray-600">
+                            {regeneratingIndex===i ? '재생성 중...' : '이미지 재생성'}
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -426,8 +463,11 @@ export default function ShortsPage() {
                  <button onClick={generateAudio} disabled={isAudioLoading || !result?.script} className="w-full bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
                   {isAudioLoading ? '음성 생성 중...' : '🔊 음성 생성하기'}
                 </button>
-                 <button onClick={downloadAll} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                  모든 파일 다운로드
+                <button onClick={downloadScript} disabled={!result?.script} className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                  📝 대본 다운로드
+                </button>
+                <button onClick={downloadAudio} disabled={!result?.audioUrl} className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                  🎵 음성 다운로드
                 </button>
               </div>
 
