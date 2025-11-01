@@ -5,7 +5,15 @@ import { useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
 
-const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+import { useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import 'react-quill-new/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill-new'), {
+  ssr: false,
+  loading: () => <p>에디터를 불러오는 중...</p>,
+});
 
 export default function EditBlogPage() {
   const [title, setTitle] = useState('');
