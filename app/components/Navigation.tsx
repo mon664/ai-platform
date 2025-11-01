@@ -1,11 +1,14 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { isAuthenticated, logout } from '@/lib/client-auth';
 
 export default function Navigation() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const menuItems = [
     { id: 'home', label: '🏠 홈', href: '/' },
@@ -25,6 +28,7 @@ export default function Navigation() {
 
   useEffect(() => {
     setIsExpanded(false);
+    setIsLoggedIn(isAuthenticated());
   }, [pathname]);
 
   const youtubeMenu = menuItems.find(item => item.id === 'youtube');
@@ -53,6 +57,28 @@ export default function Navigation() {
                 </Link>
               )
             })}
+          </div>
+
+          {/* Auth Buttons */}
+          <div className="flex items-center">
+            {isLoggedIn ? (
+              <button
+                onClick={() => {
+                  logout();
+                  setIsLoggedIn(false);
+                }}
+                className="px-4 py-2 rounded-md text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors"
+              >
+                🔓 로그아웃
+              </button>
+            ) : (
+              <Link
+                href="/admin/login"
+                className="px-4 py-2 rounded-md text-sm font-semibold bg-purple-600 hover:bg-purple-700 text-white transition-colors"
+              >
+                🔐 로그인
+              </Link>
+            )}
           </div>
 
         </div>
