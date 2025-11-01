@@ -71,7 +71,25 @@ export async function POST(req: NextRequest) {
     if (!scenesReq.ok) throw new Error('장면 프롬프트 생성 실패');
     const scenesJson = await scenesReq.json();
     const scenesTextRaw = scenesJson.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-    const scenes: string[] = JSON.parse(String(scenesTextRaw).replace(/```json\n?|\n?```/g, ''));
+    let scenes: string[] = []
+    try {
+      scenes = JSON.parse(String(scenesTextRaw).replace(/```json\n?|\n?```/g, ''))
+        .filter((s: any) => typeof s === 'string' && s.trim().length > 0)
+    } catch {}
+    // Fallback: derive scenes from script text if parsing failed/empty
+    if (!Array.isArray(scenes) || scenes.length === 0) {
+      const clean = String(script).replace(/\r/g, '').trim()
+      const chunks = clean.split(/\n{2,}|\.|!|\?/).map(s => s.trim()).filter(Boolean)
+      const wanted = Math.max(1, sceneCount || 5)
+      const approx = Math.ceil(chunks.length / wanted)
+      const derived: string[] = []
+      for (let i = 0; i < wanted; i++) {
+        const start = i * approx
+        const slice = chunks.slice(start, start + approx).join(' ')
+        derived.push((slice || `Scene ${i+1}`).slice(0, 180))
+      }
+      scenes = derived
+    }
 
     // Style mapping
     const styleMap: { [key: string]: string } = {
@@ -85,7 +103,7 @@ export async function POST(req: NextRequest) {
 
     // 3. 장면 이미지 생성
     const images: string[] = []
-    for (const scene of scenes.slice(0, sceneCount)) {
+    for (const scene of scenes.slice(0, sceneCount || scenes.length)) {
       const body: any = {
         contents: [{
           parts: [
@@ -112,14 +130,15 @@ export async function POST(req: NextRequest) {
         }
       );
       if (!imgRes.ok) {
-        const errText = await imgRes.text();
-        throw new Error(`이미지 생성 실패: ${errText.substring(0, 200)}`);
+        // Skip this scene but continue others
+        continue
       }
-      const data = await imgRes.json();
-      const imagePart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-      const b64 = imagePart?.inlineData?.data;
-      if (!b64) throw new Error('이미지 데이터 없음');
-      images.push(`data:image/png;base64,${b64}`);
+      try {
+        const data = await imgRes.json();
+        const imagePart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+        const b64 = imagePart?.inlineData?.data;
+        if (b64) images.push(`data:image/png;base64,${b64}`)
+      } catch {}
     }
 
     // 4. 최종 결과 전송
