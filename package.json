@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "opennextjs-cloudflare-build": "npx opennextjs-cloudflare build",
+    "opennextjs-cloudflare-build": "npx opennextjs-cloudflare build && node -e \"require('fs').writeFileSync('.open-next/_routes.json', JSON.stringify({version:1,include:['/*'],exclude:[]}, null, 2))\"",
     "preview": "npm run opennextjs-cloudflare-build && npx wrangler dev",
     "deploy": "npm run opennextjs-cloudflare-build && npx wrangler deploy"
   },
