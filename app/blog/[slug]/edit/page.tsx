@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
 export default function EditBlogPage() {
   const [title, setTitle] = useState('');
