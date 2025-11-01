@@ -1,4 +1,7 @@
-import { kv } from '@vercel/kv';
+import Redis from 'ioredis';
+
+// Redis 클라이언트 초기화
+const redis = new Redis(process.env.REDIS_URL || '');
 
 export interface BlogPost {
   slug: string;
@@ -27,11 +30,11 @@ export async function createPost(title: string, content: string): Promise<BlogPo
     createdAt: new Date().toISOString(),
   };
 
-  // KV에 포스트 저장
-  await kv.set(`blog:${slug}`, post);
+  // Redis에 포스트 저장 (JSON 문자열로)
+  await redis.set(`blog:${slug}`, JSON.stringify(post));
 
   // 포스트 목록에 slug 추가
-  await kv.lpush('blog:list', slug);
+  await redis.lpush('blog:list', slug);
 
   return post;
 }
@@ -39,7 +42,7 @@ export async function createPost(title: string, content: string): Promise<BlogPo
 // 글 목록 조회
 export async function listPosts(): Promise<BlogPost[]> {
   // 포스트 slug 목록 조회
-  const slugs = await kv.lrange<string>('blog:list', 0, -1);
+  const slugs = await redis.lrange('blog:list', 0, -1);
 
   if (!slugs || slugs.length === 0) {
     return [];
@@ -48,8 +51,9 @@ export async function listPosts(): Promise<BlogPost[]> {
   // 각 slug에 대한 포스트 조회
   const posts: BlogPost[] = [];
   for (const slug of slugs) {
-    const post = await kv.get<BlogPost>(`blog:${slug}`);
-    if (post) {
+    const postJson = await redis.get(`blog:${slug}`);
+    if (postJson) {
+      const post = JSON.parse(postJson) as BlogPost;
       posts.push(post);
     }
   }
@@ -62,8 +66,11 @@ export async function listPosts(): Promise<BlogPost[]> {
 
 // 특정 글 조회
 export async function getPost(slug: string): Promise<BlogPost | null> {
-  const post = await kv.get<BlogPost>(`blog:${slug}`);
-  return post;
+  const postJson = await redis.get(`blog:${slug}`);
+  if (!postJson) {
+    return null;
+  }
+  return JSON.parse(postJson) as BlogPost;
 }
 
 // 글 수정
@@ -80,7 +87,7 @@ export async function updatePost(slug: string, title: string, content: string): 
     content,
   };
 
-  await kv.set(`blog:${slug}`, updatedPost);
+  await redis.set(`blog:${slug}`, JSON.stringify(updatedPost));
   return updatedPost;
 }
 
@@ -93,10 +100,10 @@ export async function deletePost(slug: string): Promise<boolean> {
   }
 
   // 포스트 삭제
-  await kv.del(`blog:${slug}`);
+  await redis.del(`blog:${slug}`);
 
   // 목록에서 slug 제거
-  await kv.lrem('blog:list', 1, slug);
+  await redis.lrem('blog:list', 1, slug);
 
   return true;
 }
