@@ -1,0 +1,15 @@
+name = "ai-platform"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = ".open-next"
+
+[site]
+bucket = ".open-next"
+
+# Cloudflare Pages 설정
+# main 필드는 worker.js를 가리켜야 함
+main = ".open-next/worker.js"
+
+# Node.js 호환성 플래그
+compatibility_flags = ["nodejs_compat"]
+
+# 환경 변수는 Cloudflare Pages 대시보드에서 설정
