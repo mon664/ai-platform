@@ -1,12 +1,4 @@
-import fs from 'fs';
-import path from 'path';
-
-const BLOG_DIR = path.join(process.cwd(), 'data', 'blog');
-
-// 디렉토리가 없으면 생성
-if (!fs.existsSync(BLOG_DIR)) {
-  fs.mkdirSync(BLOG_DIR, { recursive: true });
-}
+import { kv } from '@vercel/kv';
 
 export interface BlogPost {
   slug: string;
@@ -35,19 +27,32 @@ export async function createPost(title: string, content: string): Promise<BlogPo
     createdAt: new Date().toISOString(),
   };
 
-  const filePath = path.join(BLOG_DIR, `${slug}.json`);
-  fs.writeFileSync(filePath, JSON.stringify(post, null, 2), 'utf-8');
+  // KV에 포스트 저장
+  await kv.set(`blog:${slug}`, post);
+
+  // 포스트 목록에 slug 추가
+  await kv.lpush('blog:list', slug);
 
   return post;
 }
 
 // 글 목록 조회
 export async function listPosts(): Promise<BlogPost[]> {
-  const files = fs.readdirSync(BLOG_DIR).filter(f => f.endsWith('.json'));
-  const posts = files.map(file => {
-    const content = fs.readFileSync(path.join(BLOG_DIR, file), 'utf-8');
-    return JSON.parse(content) as BlogPost;
-  });
+  // 포스트 slug 목록 조회
+  const slugs = await kv.lrange<string>('blog:list', 0, -1);
+
+  if (!slugs || slugs.length === 0) {
+    return [];
+  }
+
+  // 각 slug에 대한 포스트 조회
+  const posts: BlogPost[] = [];
+  for (const slug of slugs) {
+    const post = await kv.get<BlogPost>(`blog:${slug}`);
+    if (post) {
+      posts.push(post);
+    }
+  }
 
   // 최신순 정렬
   return posts.sort((a, b) =>
@@ -57,14 +62,8 @@ export async function listPosts(): Promise<BlogPost[]> {
 
 // 특정 글 조회
 export async function getPost(slug: string): Promise<BlogPost | null> {
-  const filePath = path.join(BLOG_DIR, `${slug}.json`);
-
-  if (!fs.existsSync(filePath)) {
-    return null;
-  }
-
-  const content = fs.readFileSync(filePath, 'utf-8');
-  return JSON.parse(content) as BlogPost;
+  const post = await kv.get<BlogPost>(`blog:${slug}`);
+  return post;
 }
 
 // 글 수정
@@ -81,20 +80,23 @@ export async function updatePost(slug: string, title: string, content: string): 
     content,
   };
 
-  const filePath = path.join(BLOG_DIR, `${slug}.json`);
-  fs.writeFileSync(filePath, JSON.stringify(updatedPost, null, 2), 'utf-8');
-
+  await kv.set(`blog:${slug}`, updatedPost);
   return updatedPost;
 }
 
 // 글 삭제
 export async function deletePost(slug: string): Promise<boolean> {
-  const filePath = path.join(BLOG_DIR, `${slug}.json`);
+  const post = await getPost(slug);
 
-  if (!fs.existsSync(filePath)) {
+  if (!post) {
     return false;
   }
 
-  fs.unlinkSync(filePath);
+  // 포스트 삭제
+  await kv.del(`blog:${slug}`);
+
+  // 목록에서 slug 제거
+  await kv.lrem('blog:list', 1, slug);
+
   return true;
 }
