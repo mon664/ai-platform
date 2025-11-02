@@ -24,6 +24,16 @@ export default function Navigation() {
       ],
     },
     { id: 'blog', label: '📝 블로그', href: '/blog' },
+    {
+      id: 'auto-blog',
+      label: '🤖 자동 블로그',
+      href: '/auto-blog',
+      isActive: pathname.startsWith('/auto-blog'),
+      subItems: [
+        { id: 'auto-blog-main', label: '🏠 대시보드', href: '/auto-blog' },
+        { id: 'auto-blog-settings', label: '⚙️ API 키 설정', href: '/auto-blog/settings' },
+      ],
+    },
   ];
 
   useEffect(() => {
@@ -32,6 +42,7 @@ export default function Navigation() {
   }, [pathname]);
 
   const youtubeMenu = menuItems.find(item => item.id === 'youtube');
+  const autoBlogMenu = menuItems.find(item => item.id === 'auto-blog');
 
   return (
     <div className="bg-gray-900/80 backdrop-blur-sm border-b border-gray-700/50 sticky top-0 z-50 transition-all duration-300">
@@ -88,8 +99,15 @@ export default function Navigation() {
       <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? 'max-h-96' : 'max-h-0'}`}>
         <div className="bg-black/20 p-4">
           <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* YouTube Sub-menu */}
             {youtubeMenu?.subItems?.map(subItem => (
               <Link key={subItem.id} href={subItem.href} className={`block text-center px-4 py-3 text-sm rounded-lg transition-colors ${pathname === subItem.href ? 'bg-blue-600 text-white' : 'bg-gray-700/50 hover:bg-gray-600/50 text-gray-200'}`}>
+                {subItem.label}
+              </Link>
+            ))}
+            {/* Auto-blog Sub-menu */}
+            {autoBlogMenu?.subItems?.map(subItem => (
+              <Link key={subItem.id} href={subItem.href} className={`block text-center px-4 py-3 text-sm rounded-lg transition-colors ${pathname === subItem.href ? 'bg-green-600 text-white' : 'bg-gray-700/50 hover:bg-gray-600/50 text-gray-200'}`}>
                 {subItem.label}
               </Link>
             ))}

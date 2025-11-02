@@ -6,7 +6,8 @@
 
 **타겟:** 외식 소상공인, 프랜차이즈, 외식업 관련 정보
 
-**자동화 주기:** 하루 2건 (오전 9시, 오후 6시)
+**자동화 주기:** 하루 1건 (오전 9시)
+> 현재 Vercel Hobby 요금제 제한으로 1일 1회 운영 중. Pro 전환 시 1일 2회(09시/18시) 가능.
 
 **핵심 가치:** 사람이 작성한 것처럼 자연스럽고, 실용적인 정보 제공
 
@@ -91,12 +92,18 @@ ai-platform/
 ├── app/
 │   ├── auto-blog/
 │   │   └── page.tsx                    # 관리 대시보드
+│   │   └── settings/
+│   │       └── page.tsx                # API 키 설정 페이지
 │   ├── api/
 │   │   ├── auto-blog/
 │   │   │   ├── generate/route.ts       # 블로그 생성 API
 │   │   │   ├── topics/route.ts         # 주제 생성 API
 │   │   │   ├── history/route.ts        # 생성 이력 API
 │   │   │   └── manual/route.ts         # 수동 생성 API
+│   │   │   └── keywords/
+│   │   │       └── improve/route.ts    # 키워드 개선 API (개수 제한/브랜드 제외)
+│   │   ├── auto-blog/
+│   │   │   └── settings/route.ts       # API 키 저장/조회 API
 │   │   └── cron/
 │   │       └── auto-blog/route.ts      # Vercel Cron 엔드포인트
 ├── lib/
@@ -106,6 +113,12 @@ ai-platform/
 │   │   ├── image-generator.ts          # 이미지 생성 로직
 │   │   ├── blog-publisher.ts           # 블로그 게시 로직
 │   │   └── prompt-templates.ts         # AI 프롬프트 템플릿
+│   │   ├── models.ts                   # 모델/비용 정의
+│   │   ├── api-keys.ts                 # 암호화된 API 키 로드
+│   │   ├── finishing.ts                # 마감 처리(Gemini) 모듈
+│   │   └── providers/
+│   │       ├── text.ts                 # 텍스트 라우팅(OpenAI/Claude/Gemini)
+│   │       └── image.ts                # 이미지 라우팅(DALL·E/SD)
 │   └── auto-blog-storage.ts            # 자동 블로그 데이터 관리
 └── vercel.json                          # Cron 설정
 ```
@@ -337,15 +350,15 @@ interface PublishResult {
   "crons": [
     {
       "path": "/api/cron/auto-blog",
-      "schedule": "0 9,18 * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
 ```
 
 **설명:**
-- `0 9,18 * * *` = 매일 오전 9시, 오후 6시 (한국 시간 기준 UTC+9 조정 필요)
-- 실제 한국 시간으로 하려면: `0 0,9 * * *` (UTC 기준 0시, 9시 = 한국 9시, 18시)
+- 현재 스케줄: `0 0 * * *` (UTC 00:00 → KST 09:00, 1일 1회)
+- Pro 전환 시: `0 0,9 * * *` (UTC 00:00, 09:00 → KST 09:00, 18:00)
 
 **파일:** `app/api/cron/auto-blog/route.ts`
 
@@ -357,9 +370,15 @@ import { generateImages } from '@/lib/auto-blog/image-generator'
 import { publishBlog } from '@/lib/auto-blog/blog-publisher'
 
 export async function GET(req: NextRequest) {
-  // Vercel Cron 인증 확인
+  // Vercel Cron 인증 확인 (헤더/쿼리 허용, Vercel 전용 헤더 허용)
+  const url = new URL(req.url)
+  const token = url.searchParams.get('token')
   const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const vercelCronHeader = req.headers.get('x-vercel-cron')
+  const okHeader = authHeader === `Bearer ${process.env.CRON_SECRET}`
+  const okQuery = token && token === process.env.CRON_SECRET
+  const okVercelCron = !!vercelCronHeader
+  if (!okHeader && !okQuery && !okVercelCron) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -616,7 +635,7 @@ export const PROMPT_TEMPLATES = {
 ### 자동 생성 프로세스:
 
 ```
-1. Vercel Cron 트리거 (09:00, 18:00 KST)
+1. Vercel Cron 트리거 (현재 09:00 KST, 1일 1회)
    ↓
 2. 인증 확인 (CRON_SECRET)
    ↓
@@ -674,36 +693,41 @@ export const PROMPT_TEMPLATES = {
 
 ## 🚀 구현 순서 (권장)
 
-### Phase 1: 기본 구조 (1-2일)
-1. ✅ 파일 구조 생성
-2. ✅ 주제 생성 로직 구현
-3. ✅ 콘텐츠 생성 로직 구현
-4. ✅ 테스트 API 엔드포인트
+### Phase 0: 환경 설정 ✅ **완료**
+1. ✅ 환경 변수 생성 (JWT_SECRET, ENCRYPTION_KEY)
+2. ✅ .env.local 파일 설정
+3. ⏳ Vercel 환경 변수 등록 (다음 단계)
+
+### Phase 1: 기본 구조 (1-2일) ⏳ **진행 예정**
+1. ⏳ 파일 구조 생성
+2. ⏳ 주제 생성 로직 구현
+3. ⏳ 콘텐츠 생성 로직 구현
+4. ⏳ 테스트 API 엔드포인트
 
 ### Phase 2: 이미지 생성 (1일)
-5. ✅ 이미지 생성 로직
-6. ✅ 이미지 저장 및 삽입
-7. ✅ 최적화
+5. ⏳ 이미지 생성 로직
+6. ⏳ 이미지 저장 및 삽입
+7. ⏳ 최적화
 
 ### Phase 3: 블로그 통합 (0.5일)
-8. ✅ 블로그 게시 로직
-9. ✅ 메타데이터 관리
-10. ✅ URL 생성
+8. ⏳ 블로그 게시 로직
+9. ⏳ 메타데이터 관리
+10. ⏳ URL 생성
 
 ### Phase 4: 자동화 (0.5일)
-11. ✅ Vercel Cron 설정
-12. ✅ 자동 실행 테스트
-13. ✅ 에러 핸들링
+11. ⏳ Vercel Cron 설정
+12. ⏳ 자동 실행 테스트
+13. ⏳ 에러 핸들링
 
 ### Phase 5: 관리 대시보드 (1일)
-14. ✅ UI 구현
-15. ✅ 통계 표시
-16. ✅ 수동 생성 기능
+14. ⏳ UI 구현
+15. ⏳ 통계 표시
+16. ⏳ 수동 생성 기능
 
 ### Phase 6: 최적화 및 모니터링 (1일)
-17. ✅ 성능 최적화
-18. ✅ 로그 시스템
-19. ✅ 에러 알림
+17. ⏳ 성능 최적화
+18. ⏳ 로그 시스템
+19. ⏳ 에러 알림
 
 ---
 
@@ -828,23 +852,39 @@ export const PROMPT_TEMPLATES = {
 ---
 
 **작성자:** Claude Code AI Assistant
-**최종 수정:** 2025-11-01
-**버전:** 1.0
-**상태:** 구현 준비 완료
+**최종 수정:** 2025-11-02
+**버전:** 1.1
+**상태:** Phase 0 완료, Phase 1 진행 준비
 
 ---
 
 ## 🎬 다음 단계
 
-이 MD 파일을 기반으로 다른 AI 또는 개발자가 다음 순서로 구현하면 됩니다:
+### ✅ 완료된 작업
+- ✅ 환경 변수 생성 (JWT_SECRET, ENCRYPTION_KEY)
+- ✅ .env.local 파일 설정
 
-1. ✅ 이 MD 파일 검토 및 수정
-2. ✅ Phase 1부터 순차적으로 코드 작성
-3. ✅ 각 단계별 테스트
-4. ✅ 환경 변수 설정
-5. ✅ Cron Job 설정 및 테스트
-6. ✅ 프로덕션 배포
-7. ✅ 모니터링 및 최적화
+### 🔄 현재 작업
+**Vercel 환경 변수 설정 필요:**
+```bash
+# 다음 명령어로 Vercel에 환경 변수 추가
+vercel env add JWT_SECRET
+# 값: f31cb8e785b551b49a286c3e899b65485b331b6b7ef22da6062035e4441efb28
+
+vercel env add ENCRYPTION_KEY
+# 값: 2f7898c51211ae27fd2398d0745abd27c6a78093d3e11ef65023aa70eb460151
+
+vercel env add ADMIN_PASSWORD
+# 값: (사용자가 설정한 비밀번호)
+```
+
+### ⏳ 다음 단계
+1. ⏳ Vercel 환경 변수 등록 완료
+2. ⏳ Phase 1 구현 시작 (파일 구조 생성)
+3. ⏳ 각 단계별 테스트
+4. ⏳ Cron Job 설정 및 테스트
+5. ⏳ 프로덕션 배포
+6. ⏳ 모니터링 및 최적화
 
 **질문이나 수정 사항이 있으면 이 파일을 업데이트하세요!**
 
@@ -981,65 +1021,178 @@ if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
 
 ### 🚀 배포 방법
 
-#### 1. 코드 작성 후 Git 푸시
+#### 1. 필요한 정보 준비
 
+**Vercel 인증 정보:**
+- **VERCEL_TOKEN**: Vercel 계정에서 발급
+  - https://vercel.com/account/tokens
+  - "Create Token" 클릭
+  - 이름 입력 후 생성
+  - 토큰 복사 (한 번만 표시됨!)
+
+**프로젝트 정보:**
+- **Org Slug**: `ggs-projects-fd033eb3` (현재 프로젝트)
+- **Project 이름**: `ai-platform` (이미 존재)
+
+**환경 변수 값:**
 ```bash
-# 파일 추가
-git add app/auto-blog/ app/api/auto-blog/ app/api/cron/ lib/auto-blog/ vercel.json
+# 필수
+REDIS_URL=redis://default:***@redis-11417.c340.ap-northeast-2-1.ec2.redns.redis-cloud.com:11417
+CRON_SECRET=[랜덤 문자열 생성 필요]
 
-# 커밋
+# 선택 (이미 설정되어 있음)
+GEMINI_API_KEY=AIzaSy...
+Cloud_all_API=AIzaSyCDznEqbR15saENX8cK1MOLBT-f9wgUxfQ
+```
+
+**CRON_SECRET 생성:**
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# 출력된 문자열 복사
+```
+
+---
+
+#### 2. Vercel CLI로 배포 (권장 방법)
+
+**Step 1: Vercel 프로젝트 연결**
+```bash
+# 프로젝트 디렉토리에서
+cd C:\projects\ai-platform
+
+# Vercel 프로젝트 연결
+vercel pull
+
+# 프롬프트 나오면:
+# - Set up "C:\projects\ai-platform"? Y
+# - Which scope? ggs-projects-fd033eb3 선택
+# - Link to existing project? Y
+# - What's the name of your existing project? ai-platform
+```
+
+**Step 2: 환경 변수 등록**
+```bash
+# REDIS_URL 추가
+vercel env add REDIS_URL
+# 입력 프롬프트:
+# - What's the value? [Redis URL 붙여넣기]
+# - Add to which environments? Production, Preview, Development 모두 선택
+
+# CRON_SECRET 추가
+vercel env add CRON_SECRET
+# 입력 프롬프트:
+# - What's the value? [생성한 랜덤 문자열 붙여넣기]
+# - Add to which environments? Production, Preview, Development 모두 선택
+
+# 필요시 다른 환경 변수도 동일하게 추가
+vercel env add GEMINI_API_KEY
+vercel env add Cloud_all_API
+```
+
+**Step 3: 프로덕션 배포**
+```bash
+# 코드 작성 완료 후
+git add .
 git commit -m "feat: add AI auto-blog generator system"
-
-# 푸시 (자동 배포됨)
 git push
+
+# Vercel 프로덕션 배포
+vercel deploy --prod
 ```
 
-#### 2. Vercel 환경 변수 추가
+---
 
-**Vercel 대시보드 접속:**
-1. https://vercel.com
+#### 3. Vercel Cron 설정 (중요!)
+
+**⚠️ Cron 헤더 문제 해결**
+
+Vercel Cron이 `Authorization` 헤더를 자동으로 붙여주지 못하므로, **쿼리 파라미터 방식**을 사용합니다.
+
+**Option A: Vercel 대시보드에서 설정 (권장)**
+
+1. Vercel 대시보드 접속
 2. `ai-platform` 프로젝트 선택
-3. **Settings** → **Environment Variables**
+3. **Settings** → **Cron Jobs**
+4. Path 설정:
+   ```
+   /api/cron/auto-blog?token=YOUR_CRON_SECRET
+   ```
+   (YOUR_CRON_SECRET를 실제 값으로 교체)
+5. Schedule: `0 0,9 * * *` (UTC 0시, 9시 = 한국 9시, 18시)
+6. **Save**
 
-**추가할 변수:**
-```bash
-Name: CRON_SECRET
-Value: [생성한 랜덤 문자열]
-Environments: ✅ Production ✅ Preview ✅ Development
-```
-
-**Save** 클릭!
-
-#### 3. Vercel Cron 설정 확인
-
-**파일:** `vercel.json` (프로젝트 루트)
+**Option B: vercel.json 수정 (비권장 - 시크릿 노출)**
 
 ```json
 {
   "crons": [
     {
-      "path": "/api/cron/auto-blog",
+      "path": "/api/cron/auto-blog?token=YOUR_CRON_SECRET",
       "schedule": "0 0,9 * * *"
     }
   ]
 }
 ```
 
-**스케줄 설명:**
-- `0 0,9 * * *` = UTC 기준 0시, 9시
-- **한국 시간:** 오전 9시, 오후 6시 ✅
+⚠️ **주의:** 이 방식은 Git에 시크릿이 노출되므로 **Option A 권장**
 
-**배포 후 자동 적용됨!**
+**Cron API 엔드포인트 수정 필요:**
+
+```typescript
+// app/api/cron/auto-blog/route.ts
+export async function GET(req: NextRequest) {
+  const CRON_SECRET = process.env.CRON_SECRET;
+
+  // 쿼리 파라미터로 인증 (Vercel Cron 헤더 문제 해결)
+  const token = req.nextUrl.searchParams.get('token');
+
+  // Authorization 헤더로도 지원 (수동 테스트용)
+  const authHeader = req.headers.get('authorization');
+  const headerToken = authHeader?.startsWith('Bearer ')
+    ? authHeader.substring(7)
+    : null;
+
+  // 둘 중 하나로 인증
+  if (token !== CRON_SECRET && headerToken !== CRON_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // ... 나머지 로직
+}
+```
+
+---
 
 #### 4. 배포 확인
 
 ```bash
-# 터미널에서 (또는 자동 배포 대기)
+# 배포 상태 확인
+vercel ls
+
+# 최신 배포 로그 확인
+vercel logs
+
+# 특정 배포 확인
+vercel inspect [deployment-url] --logs
+```
+
+**웹 대시보드에서 확인:**
+1. https://vercel.com/ggs-projects-fd033eb3/ai-platform
+2. **Deployments** 탭 → 최신 배포 클릭
+3. **Functions** 탭 확인
+4. **Cron Jobs** 탭에서 스케줄 확인
+
+---
+
+#### 5. 수동 배포 (GitHub 연동 없이)
+
+```bash
+# 로컬에서 직접 배포
 vercel --prod
 
-# 완료 후 확인
-# 1. https://ai-platform-one.vercel.app/auto-blog (대시보드)
-# 2. Vercel 대시보드 → Cron Jobs 탭 확인
+# 특정 브랜치 배포
+git checkout feature-branch
+vercel --prod
 ```
 
 ---
@@ -1251,3 +1404,14 @@ curl -X POST http://localhost:3000/api/auto-blog/manual \
 ---
 
 **이제 모든 정보가 준비되었습니다! 🚀**
+### 3-1. 키워드/프롬프트 모드 선택 (수동 생성)
+- 키워드 모드: 쉼표 구분 키워드 기반 콘텐츠 생성
+  - 키워드 개선 기능: 개수 제한, 브랜드 제외어 적용 가능
+  - API: `POST /api/auto-blog/keywords/improve` (옵션: `countLimit`, `excludedBrands`)
+- 프롬프트 모드: 자유 프롬프트로 상세 지시 기반 생성
+
+### 3-2. 생성 결과 편집/삽입/게시
+- “블로그 글 생성하기” 클릭 시 미리보기 생성
+- 내장 에디터(Quill)에서 제목/본문 수정
+- 생성된 이미지 에셋을 클릭하여 본문 삽입
+- “게시하기”로 즉시 발행 (API: `POST /api/auto-blog/manual` with `title`, `content`)
