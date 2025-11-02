@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import Navigation from '../components/Navigation'
+import { fetchWithAuth } from '@/lib/client-auth'
 
 interface ShortsResult {
   script: string
@@ -62,7 +63,7 @@ export default function ShortsPage() {
     setImproving(true)
     setError('')
     try {
-      const res = await fetch('/api/shorts/improve', {
+      const res = await fetchWithAuth('/api/shorts/improve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input, mode })
@@ -102,7 +103,7 @@ export default function ShortsPage() {
         formData.append('protagonistImage', protagonistImage);
       }
 
-      const res = await fetch('/api/shorts', {
+      const res = await fetchWithAuth('/api/shorts', {
         method: 'POST',
         body: formData,
       });
@@ -141,7 +142,7 @@ export default function ShortsPage() {
     setIsAudioLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/tts/generate', {
+      const res = await fetchWithAuth('/api/tts/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -246,7 +247,7 @@ export default function ShortsPage() {
       fd.append('imageStyle', imageStyle)
       if (protagonistImage) fd.append('protagonistImage', protagonistImage)
 
-      const res = await fetch('/api/shorts/regenerate', { method: 'POST', body: fd })
+      const res = await fetchWithAuth('/api/shorts/regenerate', { method: 'POST', body: fd })
       if (!res.ok) {
         const err = await res.json().catch(() => ({} as any))
         throw new Error(err.error || '이미지 재생성 실패')
