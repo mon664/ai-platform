@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { message } = await request.json();
+    const { message, confirmed } = await request.json();
 
     if (!message) {
       return NextResponse.json(
@@ -11,64 +11,80 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Chat API 호출 시작:', { messageLength: message.length });
+    console.log('Chat API 호출 시작:', { messageLength: message.length, confirmed });
 
-    // STEP 1: AI 제공업체 Fallback 시도 (비용 효율적 순서)
     let aiResponse;
     let provider = '';
 
-    // Gemini (가장 저렴, 주 엔진)
-    if (process.env.GEMINI_API_KEY) {
+    // STEP 1: 확인된 데이터가 있으면 바로 사용
+    if (confirmed) {
       try {
-        console.log('Gemini (주 엔진) 시도 중...');
-        aiResponse = await callGemini(message);
-        provider = 'Gemini (저비용)';
-        console.log('✅ Gemini 응답 성공:', { action: aiResponse.action });
-      } catch (geminiError) {
-        console.error('❌ Gemini 실패:', geminiError);
+        aiResponse = JSON.parse(message);
+        provider = '사용자 확인 데이터';
+        console.log('✅ 확인된 데이터 사용:', { action: aiResponse.action });
+      } catch (parseError) {
+        console.error('❌ 확인된 데이터 파싱 실패:', parseError);
+        return NextResponse.json(
+          { error: '데이터 형식 오류' },
+          { status: 400 }
+        );
       }
-    }
+    } else {
+      // STEP 2: AI 제공업체 Fallback 시도 (비용 효율적 순서)
 
-    // ChatGPT (필요시만)
-    if (!aiResponse && process.env.OPENAI_API_KEY) {
-      try {
-        console.log('ChatGPT (2차) 시도 중...');
-        aiResponse = await callChatGPT(message);
-        provider = 'ChatGPT';
-        console.log('✅ ChatGPT 응답 성공:', { action: aiResponse.action });
-      } catch (gptError) {
-        console.error('❌ ChatGPT 실패:', gptError);
-      }
-    }
-
-    // GLM (충전 후 복구 시)
-    if (!aiResponse && process.env.GLM_API_KEY) {
-      try {
-        console.log('GLM 4.6 (3차) 시도 중...');
-        aiResponse = await callGLM(message);
-        provider = 'GLM 4.6';
-        console.log('✅ GLM 응답 성공:', { action: aiResponse.action });
-      } catch (glmError) {
-        console.error('❌ GLM 실패:', glmError);
-      }
-    }
-
-    // 모든 AI 실패 시 모의 응답
-    if (!aiResponse) {
-      console.log('⚠️ 모든 AI 실패 - 모의 응답 반환');
-      aiResponse = {
-        action: 'sale',
-        data: {
-          customer: '테스트고객',
-          product: '테스트상품',
-          product_code: '000016', // 품목코드 추가
-          qty: 1,
-          price: 10000,
-          date: new Date().toISOString().slice(0, 10).replace(/-/g, ''),
-          warehouse: '00003' // 출하창고 추가
+      // Gemini (가장 저렴, 주 엔진)
+      if (process.env.GEMINI_API_KEY) {
+        try {
+          console.log('Gemini (주 엔진) 시도 중...');
+          aiResponse = await callGemini(message);
+          provider = 'Gemini (저비용)';
+          console.log('✅ Gemini 응답 성공:', { action: aiResponse.action });
+        } catch (geminiError) {
+          console.error('❌ Gemini 실패:', geminiError);
         }
-      };
-      provider = '모의 응답 (개발용)';
+      }
+
+      // ChatGPT (필요시만)
+      if (!aiResponse && process.env.OPENAI_API_KEY) {
+        try {
+          console.log('ChatGPT (2차) 시도 중...');
+          aiResponse = await callChatGPT(message);
+          provider = 'ChatGPT';
+          console.log('✅ ChatGPT 응답 성공:', { action: aiResponse.action });
+        } catch (gptError) {
+          console.error('❌ ChatGPT 실패:', gptError);
+        }
+      }
+
+      // GLM (충전 후 복구 시)
+      if (!aiResponse && process.env.GLM_API_KEY) {
+        try {
+          console.log('GLM 4.6 (3차) 시도 중...');
+          aiResponse = await callGLM(message);
+          provider = 'GLM 4.6';
+          console.log('✅ GLM 응답 성공:', { action: aiResponse.action });
+        } catch (glmError) {
+          console.error('❌ GLM 실패:', glmError);
+        }
+      }
+
+      // 모든 AI 실패 시 모의 응답
+      if (!aiResponse) {
+        console.log('⚠️ 모든 AI 실패 - 모의 응답 반환');
+        aiResponse = {
+          action: 'sale',
+          data: {
+            customer: '테스트고객',
+            product: '테스트상품',
+            product_code: '000016', // 품목코드 추가
+            qty: 1,
+            price: 10000,
+            date: new Date().toISOString().slice(0, 10).replace(/-/g, ''),
+            warehouse: '00003' // 출하창고 추가
+          }
+        };
+        provider = '모의 응답 (개발용)';
+      }
     }
 
     // STEP 2: 이카운트 API 호출
