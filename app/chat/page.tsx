@@ -8,6 +8,7 @@ import {
   findWarehouse,
   extractEntitiesFromText,
   generateMissingInfoQuestions,
+  formatTransactionForDisplay,
   type Vendor,
   type Product,
   type Warehouse
@@ -58,6 +59,123 @@ export default function ChatPage() {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // 정보 카드 컴포넌트
+  const InfoCard = ({ transaction, validation }: { transaction: BusinessTransaction, validation: any }) => {
+    const items = formatTransactionForDisplay(transaction, validation, warehouses);
+
+    return (
+      <div style={{
+        backgroundColor: '#1f2937',
+        border: '2px solid #374151',
+        borderRadius: '12px',
+        padding: '20px',
+        margin: '16px 0'
+      }}>
+        {items.map((item, idx) => (
+          <div key={idx} style={{
+            display: 'flex',
+            alignItems: 'center',
+            marginBottom: '12px',
+            paddingBottom: '8px',
+            borderBottom: idx < items.length - 1 ? '1px solid #374151' : 'none'
+          }}>
+            <div style={{ fontSize: '24px', marginRight: '12px' }}>{item.icon}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '2px' }}>{item.label}</div>
+              <div style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: item.value.includes('없음') || item.value.includes('정보 없음') ? '#ef4444' : 'white'
+              }}>
+                {item.value}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // 액션 버튼 컴포넌트
+  const ActionButtons = ({
+    onConfirm,
+    onEdit,
+    onCancel,
+    isValid
+  }: {
+    onConfirm: () => void;
+    onEdit: () => void;
+    onCancel: () => void;
+    isValid: boolean;
+  }) => {
+    return (
+      <div style={{
+        display: 'flex',
+        gap: '12px',
+        justifyContent: 'center',
+        margin: '16px 0'
+      }}>
+        <button
+          onClick={onConfirm}
+          disabled={!isValid}
+          style={{
+            padding: '12px 24px',
+            borderRadius: '8px',
+            border: 'none',
+            backgroundColor: isValid ? '#10b981' : '#4b5563',
+            color: 'white',
+            fontWeight: 'bold',
+            cursor: isValid ? 'pointer' : 'not-allowed',
+            fontSize: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          ✅ 맞아요
+        </button>
+
+        <button
+          onClick={onEdit}
+          style={{
+            padding: '12px 24px',
+            borderRadius: '8px',
+            border: '1px solid #f59e0b',
+            backgroundColor: 'transparent',
+            color: '#f59e0b',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            fontSize: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          🔧 수정할게
+        </button>
+
+        <button
+          onClick={onCancel}
+          style={{
+            padding: '12px 24px',
+            borderRadius: '8px',
+            border: '1px solid #ef4444',
+            backgroundColor: 'transparent',
+            color: '#ef4444',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            fontSize: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          ❌ 취소
+        </button>
+      </div>
+    );
   };
 
   const loadData = async () => {
@@ -268,43 +386,30 @@ export default function ChatPage() {
         } else {
           const { transaction, validation } = result;
 
-          if (!validation.isValid) {
-            // 정보 부족 시 추가 정보 요청
-            const questions = generateMissingInfoQuestions(validation.missing, transaction.action, transaction);
-            let message = '📋 정보 추가가 필요합니다.\n\n';
+          // 항상 정보 카드와 버튼 표시 (유효성과 상관없이)
+          setCurrentTransaction(transaction);
+          setAwaitingConfirmation(true);
 
-            if (questions.length > 0) {
-              message += '다음 정보를 알려주세요:\n';
-              questions.forEach((q, idx) => {
-                message += `${idx + 1}. ${q}\n`;
-              });
+          // 정보 카드와 버튼이 포함된 메시지 생성
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: '📋 거래 정보를 확인해주세요.',
+            data: {
+              transaction,
+              validation,
+              showInfoCard: true
             }
+          }]);
 
-            message += '\n현재까지 파악된 정보:\n';
-            message += `• 액션: ${transaction.action === 'sale' ? '판매' : transaction.action === 'purchase' ? '구매' : '생산입고'}\n`;
-            message += `• 품목: ${transaction.product}\n`;
-            if (transaction.customer) message += `• 거래처: ${transaction.customer}\n`;
-            if (transaction.qty) message += `• 수량: ${transaction.qty}개\n`;
-            if (transaction.price) message += `• 단가: ${transaction.price.toLocaleString()}원\n`;
-
-            setMessages(prev => [...prev, {
-              role: 'assistant',
-              content: message
-            }]);
-
-            // 현재 트랜잭션을 유지하여 추가 정보 수집 대기
-            setCurrentTransaction(transaction);
-            setAwaitingConfirmation(false);
-          } else {
-            // 유효성 검사 통과 시 확인 요청
-            setCurrentTransaction(transaction);
-            setAwaitingConfirmation(true);
-
-            const confirmationMessage = createConfirmationMessage(transaction, validation);
-            setMessages(prev => [...prev, {
-              role: 'assistant',
-              content: confirmationMessage
-            }]);
+          // 유효성 검사 실패 시 추가 안내
+          if (!validation.isValid) {
+            setTimeout(() => {
+              setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: `⚠️ 누락된 정보가 있습니다. ${validation.missing.length}개 필드를 확인해주세요.\n\n${validation.suggestions.join('\n')}`,
+                data: { transaction, validation, showInfoCard: true }
+              }]);
+            }, 1000);
           }
         }
       }
@@ -323,6 +428,61 @@ export default function ChatPage() {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  // 액션 버튼 핸들러
+  const handleActionConfirm = async (transaction: BusinessTransaction) => {
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: JSON.stringify(transaction),
+          confirmed: true
+        })
+      });
+
+      const result = await response.json();
+
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `✅ 처리 완료!\n\n${result.response}`,
+        data: result
+      }]);
+
+      // 현재 트랜잭션 초기화
+      setCurrentTransaction(null);
+      setAwaitingConfirmation(false);
+    } catch (error) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: '❌ 처리 중 오류 발생: ' + (error as Error).message
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleActionEdit = () => {
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: '📝 수정할 내용을 말씀해주세요.\n\n예시:\n• "거래처를 OO전자로 변경"\n• "수량을 50개로 수정"\n• "단가를 15000원으로 변경"'
+    }]);
+
+    // 수정 모드로 전환 (awaitingConfirmation은 유지)
+  };
+
+  const handleActionCancel = () => {
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: '❌ 처리가 취소되었습니다.\n\n다른 거래를 도와드릴까요?'
+    }]);
+
+    // 현재 트랜잭션 초기화
+    setCurrentTransaction(null);
+    setAwaitingConfirmation(false);
   };
 
   return (
@@ -360,19 +520,44 @@ export default function ChatPage() {
             textAlign: msg.role === 'user' ? 'right' : 'left',
             maxWidth: '100%'
           }}>
-            <div style={{
-              display: 'inline-block',
-              padding: '12px 16px',
-              borderRadius: '12px',
-              backgroundColor: msg.role === 'user' ? '#2563eb' : '#374151',
-              color: msg.role === 'user' ? 'white' : '#f3f4f6',
-              maxWidth: '80%',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word'
-            }}>
-              {msg.content}
-            </div>
-            {msg.data && (
+            {/* 일반 메시지 */}
+            {!msg.data?.transaction && (
+              <div style={{
+                display: 'inline-block',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                backgroundColor: msg.role === 'user' ? '#2563eb' : '#374151',
+                color: msg.role === 'user' ? 'white' : '#f3f4f6',
+                maxWidth: '80%',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word'
+              }}>
+                {msg.content}
+              </div>
+            )}
+
+            {/* 정보 카드 + 액션 버튼 */}
+            {msg.data?.transaction && (
+              <div style={{
+                display: 'inline-block',
+                maxWidth: '90%',
+                width: '90%'
+              }}>
+                <InfoCard
+                  transaction={msg.data.transaction}
+                  validation={msg.data.validation}
+                />
+                <ActionButtons
+                  onConfirm={() => handleActionConfirm(msg.data.transaction)}
+                  onEdit={() => handleActionEdit()}
+                  onCancel={() => handleActionCancel()}
+                  isValid={msg.data.validation?.isValid || false}
+                />
+              </div>
+            )}
+
+            {/* 시스템 응답 표시 */}
+            {msg.data && !msg.data.transaction && (
               <div style={{
                 marginTop: '8px',
                 padding: '8px 12px',

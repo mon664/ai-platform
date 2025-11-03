@@ -251,3 +251,68 @@ export function generateMissingInfoQuestions(missing: string[], action: string, 
 
   return questions;
 }
+
+// 정보 카드용 데이터 형식화
+export function formatTransactionForDisplay(transaction: any, validation: any, warehouses: Warehouse[]) {
+  const actionText = transaction.action === 'sale' ? '판매' :
+                    transaction.action === 'purchase' ? '구매' : '생산입고';
+
+  const items = [
+    {
+      icon: '📦',
+      label: '액션',
+      value: actionText,
+      color: '#3b82f6'
+    },
+    {
+      icon: transaction.action === 'sale' ? '👤' : '🏢',
+      label: transaction.action === 'sale' ? '고객' : '공급업체',
+      value: transaction.customer || transaction.vendor || '정보 없음',
+      color: transaction.action === 'sale' ? '#10b981' : '#f59e0b'
+    },
+    {
+      icon: '📄',
+      label: '품목',
+      value: transaction.product,
+      color: '#8b5cf6'
+    },
+    {
+      icon: transaction.product_code ? '🏷️' : '⚠️',
+      label: '품목코드',
+      value: transaction.product_code || 'DB에 없음',
+      color: transaction.product_code ? '#06b6d4' : '#ef4444'
+    },
+    {
+      icon: '📊',
+      label: '수량',
+      value: `${transaction.qty}개`,
+      color: '#84cc16'
+    },
+    {
+      icon: '💰',
+      label: '단가',
+      value: `${transaction.price.toLocaleString()}원`,
+      color: '#f97316'
+    }
+  ];
+
+  // 생산입고인 경우 창고 정보 추가
+  if (transaction.action === 'production_receipt' && transaction.warehouse) {
+    items.push({
+      icon: '🏭',
+      label: '창고',
+      value: warehouses.find((w: Warehouse) => w.code === transaction.warehouse)?.name || transaction.warehouse,
+      color: '#14b8a6'
+    });
+  }
+
+  // 날짜 정보 추가
+  items.push({
+    icon: '📅',
+    label: '날짜',
+    value: transaction.date.replace(/(\d{4})(\d{2})(\d{2})/, '$1년 $2월 $3일'),
+    color: '#6366f1'
+  });
+
+  return items;
+}
