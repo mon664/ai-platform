@@ -13,6 +13,7 @@ import {
   type Product,
   type Warehouse
 } from '@/lib/validators';
+import { OrderConfirmCard } from '@/app/components/OrderConfirmCard';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -37,7 +38,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: '안녕하세요! 🤖 AI 스마트 팩토리 에이전트입니다.\n\n무엇을 도와드릴까요?\n• 판매 등록 (예: "삼성전자에 갤럭시 팔아줘")\n• 구매 등록 (예: "LG디스플레이에서 OLED 패널 사줘")\n• 생산 입고 (예: "갤럭시 50개 생산 완료")'
+      content: '안녕하세요! 🤖 AI 스마트 팩토리 에이전트입니다.\n\n무엇을 도와드릴까요?\n• 판매 등록 (예: "삼성전자에 갤럭시 팔아줘")\n• 구매 등록 (예: "LG디스플레이에서 OLED 패널 사줘")\n• 생산 입고 (예: "갤럭시 50개 생산 완료")\n\n아래 버튼을 클릭하여 직접 주문을 등록할 수도 있습니다.'
     }
   ]);
   const [input, setInput] = useState('');
@@ -47,6 +48,7 @@ export default function ChatPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [currentTransaction, setCurrentTransaction] = useState<BusinessTransaction | null>(null);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const [showOrderForm, setShowOrderForm] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -485,6 +487,62 @@ export default function ChatPage() {
     setAwaitingConfirmation(false);
   };
 
+  // OrderForm 핸들러
+  const handleOrderSubmit = async (orderData: any) => {
+    setLoading(true);
+
+    try {
+      // API 형식에 맞게 데이터 변환
+      const transactionData = {
+        action: orderData.action === '구매' ? 'purchase' :
+                orderData.action === '판매' ? 'sale' : 'production_receipt',
+        data: {
+          [orderData.action === '판매' ? 'customer' : 'vendor']: orderData.vendor,
+          product: orderData.product,
+          product_code: orderData.productCode,
+          qty: orderData.quantity,
+          price: orderData.unitPrice,
+          date: orderData.date,
+          warehouse: orderData.warehouse
+        }
+      };
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: JSON.stringify(transactionData),
+          confirmed: true
+        })
+      });
+
+      const result = await response.json();
+
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `✅ ${orderData.action} 등록 완료!\n\n${result.response}`,
+        data: result
+      }]);
+
+      setShowOrderForm(false);
+    } catch (error) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: '❌ 처리 중 오류 발생: ' + (error as Error).message
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOrderCancel = () => {
+    setShowOrderForm(false);
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: '❌ 주문 등록이 취소되었습니다.\n\n다른 거래를 도와드릴까요?'
+    }]);
+  };
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#111827', color: 'white', display: 'flex', flexDirection: 'column' }}>
       {/* 헤더 */}
@@ -573,6 +631,66 @@ export default function ChatPage() {
             )}
           </div>
         ))}
+
+        {/* 직접 주문 버튼 */}
+        {!showOrderForm && !awaitingConfirmation && (
+          <div style={{ textAlign: 'center', margin: '20px 0' }}>
+            <button
+              onClick={() => setShowOrderForm(true)}
+              disabled={loading}
+              style={{
+                padding: '16px 32px',
+                borderRadius: '12px',
+                border: '2px solid #10b981',
+                backgroundColor: 'transparent',
+                color: '#10b981',
+                fontWeight: 'bold',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontSize: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                margin: '0 auto',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.backgroundColor = '#10b981';
+                  e.currentTarget.style.color = 'white';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#10b981';
+                }
+              }}
+            >
+              <span style={{ fontSize: '20px' }}>📝</span>
+              직접 주문 등록하기
+            </button>
+            <p style={{
+              color: '#9ca3af',
+              fontSize: '14px',
+              marginTop: '8px',
+              margin: '8px auto 0'
+            }}>
+              클릭하여 상세 주문 폼을 열고 모든 정보를 직접 입력하세요
+            </p>
+          </div>
+        )}
+
+        {/* OrderForm 표시 */}
+        {showOrderForm && (
+          <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
+            <OrderConfirmCard
+              onSubmit={handleOrderSubmit}
+              onCancel={handleOrderCancel}
+              loading={loading}
+            />
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
