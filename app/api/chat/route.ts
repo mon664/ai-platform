@@ -389,12 +389,12 @@ async function callEcountAPI(glmData: any) {
           body: JSON.stringify({
             SaleList: [{
               BulkDatas: {
+                SO_DATE: fixedData.date,
                 CUST_DES: fixedData.customer || fixedData.vendor,
-                IO_DATE: fixedData.date,
                 WH_CD: fixedData.warehouse,
-                SaleDetails: [{
-                  PROD_DES: fixedData.product,
+                SaleDetail: [{
                   PROD_CD: fixedData.product_code,
+                  PROD_DES: fixedData.product,
                   QTY: fixedData.qty,
                   PRICE: fixedData.price
                 }]
@@ -414,13 +414,13 @@ async function callEcountAPI(glmData: any) {
           body: JSON.stringify({
             PurchasesList: [{
               BulkDatas: {
-                CUST_DES: fixedData.vendor || fixedData.customer,
                 IO_DATE: fixedData.date,
+                CUST_DES: fixedData.vendor || fixedData.customer,
                 UPLOAD_SER_NO: "1",
                 WH_CD: "00001",
-                PurchasesDetails: [{
-                  PROD_DES: fixedData.product,
+                PurchaseDetail: [{
                   PROD_CD: fixedData.product_code,
+                  PROD_DES: fixedData.product,
                   QTY: fixedData.qty,
                   PRICE: fixedData.price
                 }]
