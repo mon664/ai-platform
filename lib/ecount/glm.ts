@@ -19,7 +19,7 @@ ${JSON.stringify(rawData, null, 2)}
 {
   "PurchasesList": [{
     "BulkDatas": {
-      "IO_DATE": "YYYY-MM-DD",
+      "IO_DATE": "YYYYMMDD",
       "UPLOAD_SER_NO": "1",
       "CUST": "",
       "CUST_DES": "거래처명",
@@ -39,14 +39,15 @@ ${JSON.stringify(rawData, null, 2)}
   }]
 }
 
-주의:
-- PROD_CD는 공백으로 두기 (이카운트가 PROD_DES로 자동 매칭)
-- CUST는 공백으로 두기 (이카운트가 CUST_DES로 자동 매칭)
-- WH_CD는 기본값 "00001" 사용
-- UPLOAD_SER_NO는 "1"로 고정
-- IO_DATE는 거래일자 형식 (YYYYMMDD)
+⚠️ **필수 규칙 (반드시 지켜야 함)**:
+1. PROD_DES (품목명)은 반드시 입력하고 절대 비우지 말 것
+2. QTY (수량)은 숫자로 입력하고 절대 비우지 말 것
+3. PRICE (단가)는 숫자로 입력하고 절대 비우지 말 것
+4. CUST_DES (거래처명)은 반드시 입력할 것
+5. IO_DATE는 YYYYMMDD 형식 (예: 20251103)
+6. PROD_CD와 CUST는 공백으로 두기 (이카운트가 자동 매칭)
 
-정확한 JSON만 출력하세요.`;
+정확한 JSON만 출력하세요. 어떤 설명도 추가하지 마세요.`;
 
     const response = await fetch("https://open.bigmodel.cn/api/paas/v4/chat/completions", {
       method: "POST",
@@ -58,6 +59,67 @@ ${JSON.stringify(rawData, null, 2)}
         model: "glm-4-flash",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3, // 정확성 중시
+        max_tokens: 2000,
+      }),
+    });
+
+    const data = await response.json();
+    const text = data.choices[0].message.content;
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    return jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+  }
+
+  // 판매 Raw Data → 이카운트 SaveSales JSON (신규 추가)
+  async parseSalesData(rawData: any): Promise<any> {
+    const prompt = `다음 판매 데이터를 이카운트 ERP SaveSales API 형식으로 변환하세요:
+
+입력 데이터:
+${JSON.stringify(rawData, null, 2)}
+
+정확한 출력 JSON (이카운트 SaveSales API 스키마):
+{
+  "SalesList": [{
+    "BulkDatas": {
+      "SO_DATE": "YYYYMMDD",
+      "UPLOAD_SER_NO": "1",
+      "CUST": "",
+      "CUST_DES": "거래처명",
+      "WH_CD": "00001",
+      "TTL_CTT": "판매 전표",
+      "U_MEMO1": "비고",
+      "SalesDetails": [
+        {
+          "PROD_CD": "",
+          "PROD_DES": "품목명",
+          "QTY": 수량,
+          "PRICE": 단가,
+          "UNIT": "개"
+        }
+      ]
+    }
+  }]
+}
+
+⚠️ **필수 규칙 (반드시 지켜야 함)**:
+1. PROD_DES (품목명)은 반드시 입력하고 절대 비우지 말 것
+2. QTY (수량)은 숫자로 입력하고 절대 비우지 말 것
+3. PRICE (단가)는 숫자로 입력하고 절대 비우지 말 것
+4. CUST_DES (거래처명)은 반드시 입력할 것
+5. SO_DATE는 YYYYMMDD 형식 (예: 20251103)
+6. PROD_CD와 CUST는 공백으로 두기 (이카운트가 자동 매칭)
+
+정확한 JSON만 출력하세요. 어떤 설명도 추가하지 마세요.`;
+
+    const response = await fetch("https://open.bigmodel.cn/api/paas/v4/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "glm-4-flash",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.3,
         max_tokens: 2000,
       }),
     });

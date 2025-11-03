@@ -331,77 +331,133 @@ async function callEcountAPI(glmData: any) {
   const sessionId = process.env.ECOUNT_SESSION_ID;
   const zone = process.env.ECOUNT_ZONE || 'BB';
 
-  if (glmData.action === 'sale') {
-    return fetch(
-      `https://sboapi${zone}.ecount.com/OAPI/V2/Sale/SaveSale?SESSION_ID=${sessionId}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          SaleList: [{
-            BulkDatas: {
-              CUST_DES: glmData.data.customer,
-              IO_DATE: glmData.data.date,
-              WH_CD: glmData.data.warehouse || "00003", // 출하창고 (필수)
-              SaleDetails: [{
-                PROD_DES: glmData.data.product, // 품목명 (필수)
-                PROD_CD: glmData.data.product_code || "000016", // 품목코드 (필수)
-                QTY: glmData.data.qty, // 수량 (필수)
-                PRICE: glmData.data.price
-              }]
-            }
-          }]
-        })
-      }
-    ).then(r => r.json());
-  }
+  // 필수 필드 검증 및 기본값 설정
+  const validateAndFixData = (data: any) => {
+    const fixed = { ...data };
+    
+    // 1. 품목명 (PROD_DES) - 필수
+    if (!fixed.product || fixed.product.trim() === '') {
+      throw new Error('❌ 품목명이 없습니다');
+    }
+    
+    // 2. 수량 (QTY) - 필수
+    if (!fixed.qty || fixed.qty <= 0) {
+      throw new Error('❌ 수량이 없거나 0 이하입니다');
+    }
+    fixed.qty = parseInt(fixed.qty);
+    
+    // 3. 단가 (PRICE) - 필수
+    if (!fixed.price || fixed.price <= 0) {
+      throw new Error('❌ 단가가 없거나 0 이하입니다');
+    }
+    fixed.price = parseInt(fixed.price);
+    
+    // 4. 거래처 (CUST_DES) - 필수
+    if (!fixed.customer && !fixed.vendor) {
+      throw new Error('❌ 거래처 정보가 없습니다');
+    }
+    
+    // 5. 날짜 (IO_DATE) - 필수, YYYYMMDD 형식
+    if (!fixed.date) {
+      fixed.date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    } else if (fixed.date.includes('-')) {
+      fixed.date = fixed.date.replace(/-/g, '');
+    }
+    
+    // 6. 품목코드 (PROD_CD) - 없으면 공백 (API가 품목명으로 매칭)
+    if (!fixed.product_code || fixed.product_code.trim() === '') {
+      fixed.product_code = '';
+    }
+    
+    // 7. 창고 (WH_CD) - 없으면 기본값
+    if (!fixed.warehouse) {
+      fixed.warehouse = '00003';
+    }
+    
+    return fixed;
+  };
 
-  if (glmData.action === 'purchase') {
-    return fetch(
-      `https://sboapi${zone}.ecount.com/OAPI/V2/Purchases/SavePurchases?SESSION_ID=${sessionId}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          PurchasesList: [{
-            BulkDatas: {
-              CUST_DES: glmData.data.vendor,
-              IO_DATE: glmData.data.date,
-              UPLOAD_SER_NO: "1",
-              WH_CD: "00003",
-              PurchasesDetails: [{
-                PROD_DES: glmData.data.product,
-                QTY: glmData.data.qty,
-                PRICE: glmData.data.price
-              }]
-            }
-          }]
-        })
-      }
-    ).then(r => r.json());
-  }
+  try {
+    const fixedData = validateAndFixData(glmData.data);
 
-  if (glmData.action === 'production_receipt') {
-    return fetch(
-      `https://sboapi${zone}.ecount.com/OAPI/V2/GoodsReceipt/SaveGoodsReceipt?SESSION_ID=${sessionId}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          GoodsReceiptList: [{
-            BulkDatas: {
-              PROD_DES: glmData.data.product,
-              QTY: glmData.data.qty,
-              IO_DATE: glmData.data.date,
-              WH_CD_F: "00004", // 생산된공장: 본사생산공장
-              WH_CD_T: "00003",  // 받는창고: 본사창고
-              PROD_CD: "000016" // 생산품목코드: 소불고기 (예시)
-            }
-          }]
-        })
-      }
-    ).then(r => r.json());
-  }
+    if (glmData.action === 'sale') {
+      return fetch(
+        `https://sboapi${zone}.ecount.com/OAPI/V2/Sale/SaveSale?SESSION_ID=${sessionId}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            SaleList: [{
+              BulkDatas: {
+                CUST_DES: fixedData.customer || fixedData.vendor,
+                IO_DATE: fixedData.date,
+                WH_CD: fixedData.warehouse,
+                SaleDetails: [{
+                  PROD_DES: fixedData.product,
+                  PROD_CD: fixedData.product_code,
+                  QTY: fixedData.qty,
+                  PRICE: fixedData.price
+                }]
+              }
+            }]
+          })
+        }
+      ).then(r => r.json());
+    }
 
-  return { error: 'Unknown action' };
+    if (glmData.action === 'purchase') {
+      return fetch(
+        `https://sboapi${zone}.ecount.com/OAPI/V2/Purchases/SavePurchases?SESSION_ID=${sessionId}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            PurchasesList: [{
+              BulkDatas: {
+                CUST_DES: fixedData.vendor || fixedData.customer,
+                IO_DATE: fixedData.date,
+                UPLOAD_SER_NO: "1",
+                WH_CD: "00001",
+                PurchasesDetails: [{
+                  PROD_DES: fixedData.product,
+                  PROD_CD: fixedData.product_code,
+                  QTY: fixedData.qty,
+                  PRICE: fixedData.price
+                }]
+              }
+            }]
+          })
+        }
+      ).then(r => r.json());
+    }
+
+    if (glmData.action === 'production_receipt') {
+      return fetch(
+        `https://sboapi${zone}.ecount.com/OAPI/V2/GoodsReceipt/SaveGoodsReceipt?SESSION_ID=${sessionId}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            GoodsReceiptList: [{
+              BulkDatas: {
+                PROD_DES: fixedData.product,
+                PROD_CD: fixedData.product_code,
+                QTY: fixedData.qty,
+                IO_DATE: fixedData.date,
+                WH_CD_F: "00004",
+                WH_CD_T: "00003"
+              }
+            }]
+          })
+        }
+      ).then(r => r.json());
+    }
+
+    return { error: 'Unknown action' };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message
+    };
+  }
 }

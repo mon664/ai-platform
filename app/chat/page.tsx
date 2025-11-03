@@ -492,43 +492,50 @@ export default function ChatPage() {
     setLoading(true);
 
     try {
-      // API 형식에 맞게 데이터 변환
-      const transactionData = {
-        action: orderData.action === '구매' ? 'purchase' :
-                orderData.action === '판매' ? 'sale' : 'production_receipt',
-        data: {
-          [orderData.action === '판매' ? 'customer' : 'vendor']: orderData.vendor,
-          product: orderData.product,
-          product_code: orderData.productCode,
-          qty: orderData.quantity,
-          price: orderData.unitPrice,
-          date: orderData.date,
-          warehouse: orderData.warehouse
-        }
+      // 액션 타입 결정
+      const action = orderData.action === '구매' ? 'purchase' :
+                     orderData.action === '판매' ? 'sale' : 'production_receipt';
+
+      // API 엔드포인트 결정
+      const apiEndpoint = action === 'sale' ? '/api/ecount/sales' : '/api/ecount/purchase';
+
+      // API에 전송할 데이터
+      const payload = {
+        product: orderData.product,
+        productCode: orderData.productCode || "",
+        quantity: orderData.quantity.toString(),
+        price: orderData.unitPrice.toString(),
+        [action === 'sale' ? 'customer' : 'vendor']: orderData.vendor,
+        date: orderData.date,
+        warehouse: orderData.warehouse || "00001"
       };
 
-      const response = await fetch('/api/chat', {
+      console.log(`📤 ${action === 'sale' ? '판매' : '구매'} API 호출:`, payload);
+
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: JSON.stringify(transactionData),
-          confirmed: true
-        })
+        body: JSON.stringify(payload)
       });
 
       const result = await response.json();
 
+      if (!result.success) {
+        throw new Error(result.error || '알 수 없는 오류');
+      }
+
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: `✅ ${orderData.action} 등록 완료!\n\n${result.response}`,
+        content: result.message,
         data: result
       }]);
 
       setShowOrderForm(false);
     } catch (error) {
+      const errorMsg = (error as Error).message;
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: '❌ 처리 중 오류 발생: ' + (error as Error).message
+        content: `❌ 처리 중 오류 발생:\n${errorMsg}`
       }]);
     } finally {
       setLoading(false);
