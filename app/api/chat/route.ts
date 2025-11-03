@@ -61,9 +61,11 @@ export async function POST(request: NextRequest) {
         data: {
           customer: '테스트고객',
           product: '테스트상품',
+          product_code: '000016', // 품목코드 추가
           qty: 1,
           price: 10000,
-          date: new Date().toISOString().slice(0, 10).replace(/-/g, '')
+          date: new Date().toISOString().slice(0, 10).replace(/-/g, ''),
+          warehouse: '00003' // 출하창고 추가
         }
       };
       provider = '모의 응답 (개발용)';
@@ -98,7 +100,9 @@ async function callGLM(message: string) {
 - purchase: 구매
 - production_receipt: 생산입고
 
-{"action":"...","data":{"vendor/customer":"","product":"","qty":0,"price":0,"date":"20251103"}}
+JSON 형식 (품목코드와 창고 필수):
+{"action":"...","data":{"vendor/customer":"","product":"","product_code":"","qty":0,"price":0,"date":"20251103","warehouse":""}}
+품목코드 예시: 000016(소불고기), 창고 예시: 00003(본사창고)
 `;
 
   console.log('GLM API 요청:', { promptLength: prompt.length });
@@ -166,7 +170,9 @@ async function callChatGPT(message: string) {
 - purchase: 구매
 - production_receipt: 생산입고
 
-{"action":"...","data":{"vendor/customer":"","product":"","qty":0,"price":0,"date":"20251103"}}
+JSON 형식 (품목코드와 창고 필수):
+{"action":"...","data":{"vendor/customer":"","product":"","product_code":"","qty":0,"price":0,"date":"20251103","warehouse":""}}
+품목코드 예시: 000016(소불고기), 창고 예시: 00003(본사창고)
 `;
 
   console.log('ChatGPT API 요청:', { promptLength: prompt.length });
@@ -224,7 +230,9 @@ async function callGemini(message: string) {
 - purchase: 구매
 - production_receipt: 생산입고
 
-{"action":"...","data":{"vendor/customer":"","product":"","qty":0,"price":0,"date":"20251103"}}
+JSON 형식 (품목코드와 창고 필수):
+{"action":"...","data":{"vendor/customer":"","product":"","product_code":"","qty":0,"price":0,"date":"20251103","warehouse":""}}
+품목코드 예시: 000016(소불고기), 창고 예시: 00003(본사창고)
 JSON만 반환하세요:
 `;
 
@@ -289,9 +297,11 @@ async function callEcountAPI(glmData: any) {
             BulkDatas: {
               CUST_DES: glmData.data.customer,
               IO_DATE: glmData.data.date,
+              WH_CD: glmData.data.warehouse || "00003", // 출하창고 (필수)
               SaleDetails: [{
-                PROD_DES: glmData.data.product,
-                QTY: glmData.data.qty,
+                PROD_DES: glmData.data.product, // 품목명 (필수)
+                PROD_CD: glmData.data.product_code || "000016", // 품목코드 (필수)
+                QTY: glmData.data.qty, // 수량 (필수)
                 PRICE: glmData.data.price
               }]
             }
