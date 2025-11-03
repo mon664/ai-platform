@@ -19,12 +19,23 @@ export async function GET() {
       const columns = line.split(',').map(col => col.replace(/"/g, '').trim());
 
       if (columns.length >= 3 && columns[0] && columns[1]) {
+        // 가격 정보 찾기 (보통 뒤쪽 컬럼에 있음)
+        let price = '10000'; // 기본 가격
+        for (let j = 5; j < columns.length; j++) {
+          const col = columns[j].replace(/,/g, '').replace(/원/g, '');
+          if (col && /^\d+$/.test(col) && parseInt(col) > 0) {
+            price = col;
+            break;
+          }
+        }
+
         products.push({
           code: columns[0],
           name: columns[1],
           type: columns[2] || '',
           spec: columns[3] || '',
-          group: columns[4] || ''
+          group: columns[4] || '',
+          price: price
         });
       }
     }

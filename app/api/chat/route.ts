@@ -116,9 +116,19 @@ async function callGLM(message: string) {
 - purchase: 구매
 - production_receipt: 생산입고
 
-JSON 형식 (품목코드와 창고 필수):
+JSON 형식 (반드시 PROD_CD, PROD_DES, QTY 필수 포함):
 {"action":"...","data":{"vendor/customer":"","product":"","product_code":"","qty":0,"price":0,"date":"20251103","warehouse":""}}
-품목코드 예시: 000016(소불고기), 창고 예시: 00003(본사창고)
+
+중요: 이카운트 API 요구사항
+- PROD_CD (품목코드)는 반드시 유효한 6자리 숫자여야 함
+- PROD_DES (품목명)은 반드시 포함해야 함
+- QTY (수량)는 0보다 큰 정수여야 함
+- 모든 필수 필드가 누락되면 API가 거절함
+
+품목코드 예시: 000016(소불고기), 000017(돈까스), 000018(치킨)
+창고 예시: 00003(본사창고), 00004(본사생산공장)
+
+JSON만 반환하세요:
 `;
 
   console.log('GLM API 요청:', { promptLength: prompt.length });
@@ -186,9 +196,19 @@ async function callChatGPT(message: string) {
 - purchase: 구매
 - production_receipt: 생산입고
 
-JSON 형식 (품목코드와 창고 필수):
+JSON 형식 (반드시 PROD_CD, PROD_DES, QTY 필수 포함):
 {"action":"...","data":{"vendor/customer":"","product":"","product_code":"","qty":0,"price":0,"date":"20251103","warehouse":""}}
-품목코드 예시: 000016(소불고기), 창고 예시: 00003(본사창고)
+
+중요: 이카운트 API 요구사항
+- PROD_CD (품목코드)는 반드시 유효한 6자리 숫자여야 함
+- PROD_DES (품목명)은 반드시 포함해야 함
+- QTY (수량)는 0보다 큰 정수여야 함
+- 모든 필수 필드가 누락되면 API가 거절함
+
+품목코드 예시: 000016(소불고기), 000017(돈까스), 000018(치킨)
+창고 예시: 00003(본사창고), 00004(본사생산공장)
+
+JSON만 반환하세요:
 `;
 
   console.log('ChatGPT API 요청:', { promptLength: prompt.length });
@@ -246,9 +266,18 @@ async function callGemini(message: string) {
 - purchase: 구매
 - production_receipt: 생산입고
 
-JSON 형식 (품목코드와 창고 필수):
+JSON 형식 (반드시 PROD_CD, PROD_DES, QTY 필수 포함):
 {"action":"...","data":{"vendor/customer":"","product":"","product_code":"","qty":0,"price":0,"date":"20251103","warehouse":""}}
-품목코드 예시: 000016(소불고기), 창고 예시: 00003(본사창고)
+
+중요: 이카운트 API 요구사항
+- PROD_CD (품목코드)는 반드시 유효한 6자리 숫자여야 함
+- PROD_DES (품목명)은 반드시 포함해야 함
+- QTY (수량)는 0보다 큰 정수여야 함
+- 모든 필수 필드가 누락되면 API가 거절함
+
+품목코드 예시: 000016(소불고기), 000017(돈까스), 000018(치킨)
+창고 예시: 00003(본사창고), 00004(본사생산공장)
+
 JSON만 반환하세요:
 `;
 
