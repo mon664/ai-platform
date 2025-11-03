@@ -1,4 +1,30 @@
 {
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_APP_URL": "@url"
+  },
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        }
+      ]
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron/auto-blog",

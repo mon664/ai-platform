@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.3",
     "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^3.0.2",
     "gray-matter": "^4.0.3",

@@ -1,0 +1,352 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function POST(request: NextRequest) {
+  try {
+    const { message } = await request.json();
+
+    if (!message) {
+      return NextResponse.json(
+        { error: 'message가 없습니다.' },
+        { status: 400 }
+      );
+    }
+
+    console.log('Chat API 호출 시작:', { messageLength: message.length });
+
+    // STEP 1: AI 제공업체 Fallback 시도 (비용 효율적 순서)
+    let aiResponse;
+    let provider = '';
+
+    // Gemini (가장 저렴, 주 엔진)
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        console.log('Gemini (주 엔진) 시도 중...');
+        aiResponse = await callGemini(message);
+        provider = 'Gemini (저비용)';
+        console.log('✅ Gemini 응답 성공:', { action: aiResponse.action });
+      } catch (geminiError) {
+        console.error('❌ Gemini 실패:', geminiError);
+      }
+    }
+
+    // ChatGPT (필요시만)
+    if (!aiResponse && process.env.OPENAI_API_KEY) {
+      try {
+        console.log('ChatGPT (2차) 시도 중...');
+        aiResponse = await callChatGPT(message);
+        provider = 'ChatGPT';
+        console.log('✅ ChatGPT 응답 성공:', { action: aiResponse.action });
+      } catch (gptError) {
+        console.error('❌ ChatGPT 실패:', gptError);
+      }
+    }
+
+    // GLM (충전 후 복구 시)
+    if (!aiResponse && process.env.GLM_API_KEY) {
+      try {
+        console.log('GLM 4.6 (3차) 시도 중...');
+        aiResponse = await callGLM(message);
+        provider = 'GLM 4.6';
+        console.log('✅ GLM 응답 성공:', { action: aiResponse.action });
+      } catch (glmError) {
+        console.error('❌ GLM 실패:', glmError);
+      }
+    }
+
+    // 모든 AI 실패 시 모의 응답
+    if (!aiResponse) {
+      console.log('⚠️ 모든 AI 실패 - 모의 응답 반환');
+      aiResponse = {
+        action: 'sale',
+        data: {
+          customer: '테스트고객',
+          product: '테스트상품',
+          qty: 1,
+          price: 10000,
+          date: new Date().toISOString().slice(0, 10).replace(/-/g, '')
+        }
+      };
+      provider = '모의 응답 (개발용)';
+    }
+
+    // STEP 2: 이카운트 API 호출
+    const ecountResult = await callEcountAPI(aiResponse);
+
+    // STEP 3: 결과 반환
+    return NextResponse.json({
+      response: `✅ ${provider} - ${aiResponse.action} 완료\n${JSON.stringify(ecountResult, null, 2)}`
+    });
+  } catch (error) {
+    console.error('Chat API Error:', error);
+    return NextResponse.json(
+      { error: `Server error: ${(error as Error).message}` },
+      { status: 500 }
+    );
+  }
+}
+
+// GLM 4.6 호출 (최소 토큰)
+async function callGLM(message: string) {
+  const glmApiKey = process.env.GLM_API_KEY;
+
+  const prompt = `
+다음 명령을 JSON으로 변환:
+입력: "${message}"
+
+규칙:
+- sale: 판매
+- purchase: 구매
+- production_receipt: 생산입고
+
+{"action":"...","data":{"vendor/customer":"","product":"","qty":0,"price":0,"date":"20251103"}}
+`;
+
+  console.log('GLM API 요청:', { promptLength: prompt.length });
+
+  const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${glmApiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'glm-4',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000,
+    }),
+  });
+
+  console.log('GLM API 응답 상태:', response.status);
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error('GLM API Error:', errorData);
+    throw new Error(`GLM API failed: ${errorData.error?.message || 'Unknown error'}`);
+  }
+
+  const data = await response.json();
+  console.log('GLM API 성공:', { responseLength: JSON.stringify(data).length });
+
+  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    throw new Error('GLM API 응답 형식 오류');
+  }
+
+  const text = data.choices[0].message.content;
+  console.log('GLM 응답 텍스트:', text);
+
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error('GLM 응답에서 JSON을 찾을 수 없음');
+  }
+
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch (parseError) {
+    console.error('JSON 파싱 오류:', jsonMatch[0]);
+    throw new Error('GLM 응답 JSON 파싱 실패');
+  }
+}
+
+// ChatGPT 호출
+async function callChatGPT(message: string) {
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+
+  const prompt = `
+다음 명령을 JSON으로 변환:
+입력: "${message}"
+
+규칙:
+- sale: 판매
+- purchase: 구매
+- production_receipt: 생산입고
+
+{"action":"...","data":{"vendor/customer":"","product":"","qty":0,"price":0,"date":"20251103"}}
+`;
+
+  console.log('ChatGPT API 요청:', { promptLength: prompt.length });
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${openaiApiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error('ChatGPT API Error:', errorData);
+    throw new Error(`ChatGPT API failed: ${errorData.error?.message || 'Unknown error'}`);
+  }
+
+  const data = await response.json();
+  const text = data.choices[0].message.content;
+
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error('ChatGPT 응답에서 JSON을 찾을 수 없음');
+  }
+
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch (parseError) {
+    throw new Error('ChatGPT 응답 JSON 파싱 실패');
+  }
+}
+
+// Gemini 호출
+async function callGemini(message: string) {
+  const geminiApiKey = process.env.GEMINI_API_KEY;
+
+  const prompt = `
+다음 명령을 JSON으로 변환:
+입력: "${message}"
+
+규칙:
+- sale: 판매
+- purchase: 구매
+- production_receipt: 생산입고
+
+{"action":"...","data":{"vendor/customer":"","product":"","qty":0,"price":0,"date":"20251103"}}
+JSON만 반환하세요:
+`;
+
+  console.log('Gemini API 요청:', { promptLength: prompt.length });
+
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            {
+              text: prompt
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 2000,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error('Gemini API Error:', errorData);
+    throw new Error(`Gemini API failed: ${errorData.error?.message || 'Unknown error'}`);
+  }
+
+  const data = await response.json();
+  const text = data.candidates[0].content.parts[0].text;
+
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error('Gemini 응답에서 JSON을 찾을 수 없음');
+  }
+
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch (parseError) {
+    throw new Error('Gemini 응답 JSON 파싱 실패');
+  }
+}
+
+// 이카운트 API 호출
+async function callEcountAPI(glmData: any) {
+  const sessionId = process.env.ECOUNT_SESSION_ID;
+  const zone = process.env.ECOUNT_ZONE || 'BB';
+
+  if (glmData.action === 'sale') {
+    return fetch(
+      `https://sboapi${zone}.ecount.com/OAPI/V2/Sale/SaveSale?SESSION_ID=${sessionId}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          SaleList: [{
+            BulkDatas: {
+              CUST_DES: glmData.data.customer,
+              IO_DATE: glmData.data.date,
+              SaleDetails: [{
+                PROD_DES: glmData.data.product,
+                QTY: glmData.data.qty,
+                PRICE: glmData.data.price
+              }]
+            }
+          }]
+        })
+      }
+    ).then(r => r.json());
+  }
+
+  if (glmData.action === 'purchase') {
+    return fetch(
+      `https://sboapi${zone}.ecount.com/OAPI/V2/Purchases/SavePurchases?SESSION_ID=${sessionId}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          PurchasesList: [{
+            BulkDatas: {
+              CUST_DES: glmData.data.vendor,
+              IO_DATE: glmData.data.date,
+              UPLOAD_SER_NO: "1",
+              WH_CD: "00003",
+              PurchasesDetails: [{
+                PROD_DES: glmData.data.product,
+                QTY: glmData.data.qty,
+                PRICE: glmData.data.price
+              }]
+            }
+          }]
+        })
+      }
+    ).then(r => r.json());
+  }
+
+  if (glmData.action === 'production_receipt') {
+    return fetch(
+      `https://sboapi${zone}.ecount.com/OAPI/V2/GoodsReceipt/SaveGoodsReceipt?SESSION_ID=${sessionId}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          GoodsReceiptList: [{
+            BulkDatas: {
+              PROD_DES: glmData.data.product,
+              QTY: glmData.data.qty,
+              IO_DATE: glmData.data.date,
+              WH_CD_F: "00004", // 생산된공장: 본사생산공장
+              WH_CD_T: "00003",  // 받는창고: 본사창고
+              PROD_CD: "000016" // 생산품목코드: 소불고기 (예시)
+            }
+          }]
+        })
+      }
+    ).then(r => r.json());
+  }
+
+  return { error: 'Unknown action' };
+}

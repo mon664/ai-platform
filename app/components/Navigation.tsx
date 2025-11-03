@@ -1,119 +1,139 @@
-'use client'
-import { useState, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+'use client';
+
 import Link from 'next/link';
-import { isAuthenticated, logout } from '@/lib/client-auth';
+import { usePathname } from 'next/navigation';
 
 export default function Navigation() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  const menuItems = [
-    { id: 'home', label: '🏠 홈', href: '/' },
-    {
-      id: 'youtube',
-      label: '🎬 유튜브',
-      isActive: pathname.startsWith('/character') || pathname.startsWith('/tts') || pathname.startsWith('/shorts') || pathname.startsWith('/story'),
-      subItems: [
-        { id: 'shorts', label: '🎬 쇼츠 생성기', href: '/shorts' },
-        { id: 'story', label: '📖 스토리 생성기', href: '/story' },
-        { id: 'character', label: '👤 캐릭터 생성기', href: '/character' },
-        { id: 'tts', label: '🎤 음성 생성기', href: '/tts' },
-      ],
-    },
-    { id: 'blog', label: '📝 블로그', href: '/blog' },
-    {
-      id: 'auto-blog',
-      label: '🤖 자동 블로그',
-      href: '/auto-blog',
-      isActive: pathname.startsWith('/auto-blog'),
-      subItems: [
-        { id: 'auto-blog-main', label: '🏠 대시보드', href: '/auto-blog' },
-        { id: 'auto-blog-settings', label: '⚙️ API 키 설정', href: '/auto-blog/settings' },
-      ],
-    },
-  ];
-
-  useEffect(() => {
-    setIsExpanded(false);
-    setIsLoggedIn(isAuthenticated());
-  }, [pathname]);
-
-  const youtubeMenu = menuItems.find(item => item.id === 'youtube');
-  const autoBlogMenu = menuItems.find(item => item.id === 'auto-blog');
 
   return (
-    <div className="bg-gray-900/80 backdrop-blur-sm border-b border-gray-700/50 sticky top-0 z-50 transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Main Menu */}
-          <div className="flex items-center">
-            {menuItems.map(item => {
-              if (item.subItems) {
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className={`px-3 py-2 rounded-md text-sm font-semibold flex items-center transition-colors ${item.isActive ? 'text-blue-400' : 'text-gray-300 hover:text-white'}`}>
-                    {item.label}
-                    <svg className={`w-4 h-4 ml-1.5 text-gray-500 transition-transform duration-300 ${isExpanded ? 'transform rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                  </button>
-                )
-              }
-              return (
-                <Link key={item.id} href={item.href!} className={`px-3 py-2 rounded-md text-sm font-semibold transition-colors ${pathname === item.href ? 'text-blue-400' : 'text-gray-300 hover:text-white'}`}>
-                  {item.label}
-                </Link>
-              )
-            })}
-          </div>
+    <nav style={{
+      backgroundColor: '#1f2937',
+      padding: '1rem 2rem',
+      borderBottom: '1px solid #374151',
+      position: 'sticky',
+      top: '0',
+      zIndex: '50'
+    }}>
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <Link href="/" style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#4ade80', textDecoration: 'none' }}>
+          🏭 AI 스마트 팩토리 ERP
+        </Link>
 
-          {/* Auth Buttons */}
-          <div className="flex items-center">
-            {isLoggedIn ? (
-              <button
-                onClick={() => {
-                  logout();
-                  setIsLoggedIn(false);
-                }}
-                className="px-4 py-2 rounded-md text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors"
-              >
-                🔓 로그아웃
-              </button>
-            ) : (
-              <Link
-                href="/admin/login"
-                className="px-4 py-2 rounded-md text-sm font-semibold bg-purple-600 hover:bg-purple-700 text-white transition-colors"
-              >
-                🔐 로그인
-              </Link>
-            )}
-          </div>
-
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <Link
+            href="/"
+            style={{
+              color: pathname === '/' ? '#4ade80' : '#9ca3af',
+              textDecoration: 'none',
+              fontWeight: pathname === '/' ? 'bold' : 'normal',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              backgroundColor: pathname === '/' ? '#064e3b' : 'transparent',
+              fontSize: '14px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            🏠 대시보드
+          </Link>
+          <Link
+            href="/chat"
+            style={{
+              color: pathname.startsWith('/chat') ? '#60a5fa' : '#9ca3af',
+              textDecoration: 'none',
+              fontWeight: pathname.startsWith('/chat') ? 'bold' : 'normal',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              backgroundColor: pathname.startsWith('/chat') ? '#1e3a8a' : 'transparent',
+              fontSize: '14px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            🤖 AI 채팅
+          </Link>
+          <Link
+            href="/modules/purchase-input"
+            style={{
+              color: pathname.startsWith('/modules/purchase-input') ? '#f59e0b' : '#9ca3af',
+              textDecoration: 'none',
+              fontWeight: pathname.startsWith('/modules/purchase-input') ? 'bold' : 'normal',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              backgroundColor: pathname.startsWith('/modules/purchase-input') ? '#78350f' : 'transparent',
+              fontSize: '14px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            📋 구매입력
+          </Link>
+          <Link
+            href="/ecount/purchase"
+            style={{
+              color: pathname.startsWith('/ecount/purchase') ? '#f59e0b' : '#9ca3af',
+              textDecoration: 'none',
+              fontWeight: pathname.startsWith('/ecount/purchase') ? 'bold' : 'normal',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              backgroundColor: pathname.startsWith('/ecount/purchase') ? '#78350f' : 'transparent',
+              fontSize: '14px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            📸 이카운트
+          </Link>
+          <Link
+            href="/modules/production-log"
+            style={{
+              color: pathname.startsWith('/modules/production-log') ? '#10b981' : '#9ca3af',
+              textDecoration: 'none',
+              fontWeight: pathname.startsWith('/modules/production-log') ? 'bold' : 'normal',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              backgroundColor: pathname.startsWith('/modules/production-log') ? '#064e3b' : 'transparent',
+              fontSize: '14px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            📊 생산일지
+          </Link>
+          <Link
+            href="/modules/bom"
+            style={{
+              color: pathname.startsWith('/modules/bom') ? '#10b981' : '#9ca3af',
+              textDecoration: 'none',
+              fontWeight: pathname.startsWith('/modules/bom') ? 'bold' : 'normal',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              backgroundColor: pathname.startsWith('/modules/bom') ? '#064e3b' : 'transparent',
+              fontSize: '14px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            💰 BOM
+          </Link>
+          <Link
+            href="/modules/haccp"
+            style={{
+              color: pathname.startsWith('/modules/haccp') ? '#ef4444' : '#9ca3af',
+              textDecoration: 'none',
+              fontWeight: pathname.startsWith('/modules/haccp') ? 'bold' : 'normal',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              backgroundColor: pathname.startsWith('/modules/haccp') ? '#7f1d1d' : 'transparent',
+              fontSize: '14px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            🔬 HACCP
+          </Link>
         </div>
       </div>
-
-      {/* Accordion Sub-menu Panel */}
-      <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? 'max-h-96' : 'max-h-0'}`}>
-        <div className="bg-black/20 p-4">
-          <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* YouTube Sub-menu */}
-            {youtubeMenu?.subItems?.map(subItem => (
-              <Link key={subItem.id} href={subItem.href} className={`block text-center px-4 py-3 text-sm rounded-lg transition-colors ${pathname === subItem.href ? 'bg-blue-600 text-white' : 'bg-gray-700/50 hover:bg-gray-600/50 text-gray-200'}`}>
-                {subItem.label}
-              </Link>
-            ))}
-            {/* Auto-blog Sub-menu */}
-            {autoBlogMenu?.subItems?.map(subItem => (
-              <Link key={subItem.id} href={subItem.href} className={`block text-center px-4 py-3 text-sm rounded-lg transition-colors ${pathname === subItem.href ? 'bg-green-600 text-white' : 'bg-gray-700/50 hover:bg-gray-600/50 text-gray-200'}`}>
-                {subItem.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+    </nav>
+  );
 }
