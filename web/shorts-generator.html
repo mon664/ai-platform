@@ -362,25 +362,32 @@
                 return;
             }
 
-            const formData = {
-                input: inputEl.value,
-                sceneCount: document.getElementById('sceneCount').value,
-            };
+            const sceneCount = parseInt(document.getElementById('sceneCount').value);
+            const script = createDemoScript(inputEl.value); // Script is still generated locally
+            const keywords = inputEl.value.split(',').map(k => k.trim()).filter(Boolean);
 
             document.getElementById('loading-container').classList.remove('hidden');
             document.getElementById('result-container').classList.add('hidden');
             
             try {
                 updateProgress(20, '대본 생성 중...');
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                document.getElementById('script-result').textContent = script;
                 
-                updateProgress(50, '음성 및 이미지 URL 생성 중...');
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                updateProgress(50, '백엔드에 이미지 및 음성 생성 요청 중...');
+                const response = await fetch('/api/generate-shorts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ keywords, script, sceneCount }),
+                });
 
-                const result = createDemoResult(formData);
-                displayResult(result);
+                if (!response.ok) {
+                    throw new Error(`서버 오류: ${response.statusText}`);
+                }
+
+                const result = await response.json();
                 
                 updateProgress(100, '완료!');
+                displayResult(result, script); // Pass script to displayResult
                 document.getElementById('result-container').classList.remove('hidden');
                 showAlert('쇼츠 생성이 완료되었습니다.', 'success');
 
@@ -391,12 +398,9 @@
             }
         }
 
-        function createDemoResult(formData) {
-            const keywords = formData.input.split(',').map(k => k.trim()).filter(Boolean);
-            const mainKeyword = keywords[0] || 'video';
-
-            // 1. 스크립트 생성
-            const script = `[장면 1]
+        function createDemoScript(input) {
+            const mainKeyword = input.split(',')[0].trim() || "새로운 주제";
+            return `[장면 1]
 주목! ${mainKeyword}에 대한 놀라운 사실!
 
 [장면 2]
@@ -407,36 +411,21 @@
 
 [장면 4]
 더 많은 팁을 원한다면 구독과 좋아요!`;
-
-            // 2. 이미지 URL 생성
-            const images = [];
-            for (let i = 0; i < formData.sceneCount; i++) {
-                const keyword = keywords[i % keywords.length] || mainKeyword;
-                images.push({
-                    number: i + 1,
-                    imageUrl: `https://dummyimage.com/400x600/cccccc/000000.png&text=${encodeURIComponent(keyword)}`
-                });
-            }
-
-            // 3. 오디오 URL 생성
-            const audioUrl = 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3';
-
-            return { script, images, audioUrl };
         }
 
-        function displayResult(result) {
-            document.getElementById('script-result').textContent = result.script;
+        function displayResult(result, script) {
+            document.getElementById('script-result').textContent = script;
             document.getElementById('audio-player').src = result.audioUrl;
             
             const imagesGrid = document.getElementById('images-grid');
             imagesGrid.innerHTML = '';
-            result.images.forEach(scene => {
+            result.imageUrls.forEach((imageUrl, index) => {
                 const sceneDiv = document.createElement('div');
                 sceneDiv.className = 'scene-image';
                 sceneDiv.innerHTML = `
-                    <div class="scene-number">장면 ${scene.number}</div>
-                    <img src="${scene.imageUrl}" alt="장면 ${scene.number}">
-                    <button class="regenerate-btn" onclick="regenerateScene(${scene.number})">🔄</button>
+                    <div class="scene-number">장면 ${index + 1}</div>
+                    <img src="${imageUrl}" alt="장면 ${index + 1}">
+                    <button class="regenerate-btn" onclick="regenerateScene(${index + 1})">🔄</button>
                 `;
                 imagesGrid.appendChild(sceneDiv);
             });
