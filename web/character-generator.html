@@ -429,12 +429,15 @@
         async function generateCharacterImage(formData) {
             // 데모 캐릭터 생성
             await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            const keywords = formData.prompt.split(' ').filter(k => k.length > 2);
+            const keyword = keywords.length > 0 ? keywords[0] : 'person';
 
             const character = {
                 id: uuidv4(),
                 name: formData.characterName || 'AI 생성 캐릭터',
                 description: formData.prompt,
-                imageUrl: `https://picsum.photos/seed/character_${Date.now()}/500/500.jpg`,
+                imageUrl: `https://loremflickr.com/500/500/${encodeURIComponent(keyword)}?lock=${Date.now()}`,
                 style: formData.imageStyle,
                 ratio: formData.imageRatio,
                 quality: formData.quality,

@@ -406,16 +406,18 @@
         async function generateStoryScenes(formData) {
             const scenes = [];
             const sceneCount = parseInt(formData.sceneCount);
+            const keywords = formData.storyPrompt.split(' ').filter(k => k.length > 2); // Use words from prompt as keywords
 
             // 데모 스토리 장면 생성
             const storyStructure = generateStoryStructure(formData.storyPrompt, sceneCount);
 
             for (let i = 0; i < sceneCount; i++) {
+                const keyword = keywords.length > 0 ? keywords[i % keywords.length] : 'story';
                 const scene = {
                     number: i + 1,
                     title: storyStructure[i].title,
                     description: storyStructure[i].description,
-                    imageUrl: `https://picsum.photos/seed/story_${Date.now()}_${i}/400/600.jpg`,
+                    imageUrl: `https://loremflickr.com/400/600/${encodeURIComponent(keyword)}?lock=${Date.now() + i}`,
                     prompt: `${formData.storyPrompt} - 장면 ${i + 1}: ${storyStructure[i].title}, ${formData.imageStyle} 스타일, ${formData.mood} 분위기`
                 };
                 scenes.push(scene);
