@@ -296,6 +296,145 @@
         </div>
     </div>
 
+    <script>
+        let currentMode = 'keyword';
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.mode-btn[onclick="setMode('${mode}')"]`).classList.add('active');
+
+            if (mode === 'keyword') {
+                document.getElementById('keyword-group').classList.remove('hidden');
+                document.getElementById('prompt-group').classList.add('hidden');
+            } else {
+                document.getElementById('keyword-group').classList.add('hidden');
+                document.getElementById('prompt-group').classList.remove('hidden');
+            }
+        }
+
+        function updateSpeedValue() {
+            const speed = document.getElementById('ttsSpeed').value;
+            document.getElementById('speedValue').textContent = speed + 'x';
+        }
+
+        function showAlert(message, type = 'error') {
+            const container = type === 'error' ? document.getElementById('error-container') : document.getElementById('success-container');
+            const className = type === 'error' ? 'error-message' : 'success-message';
+            container.innerHTML = `<div class="${className}">${message}</div>`;
+            container.classList.remove('hidden');
+            setTimeout(() => container.classList.add('hidden'), 3000);
+        }
+
+        function updateProgress(percentage, text) {
+            document.getElementById('progress-fill').style.width = percentage + '%';
+            document.getElementById('progress-text').textContent = text;
+        }
+
+        async function improveInput() {
+            const inputEl = currentMode === 'keyword' ? document.getElementById('keyword') : document.getElementById('prompt');
+            const suggestionArea = document.getElementById('improved-keyword-area');
+            const suggestionText = document.getElementById('improved-keyword-text');
+            
+            if (!inputEl.value.trim()) {
+                showAlert('개선할 내용을 먼저 입력해주세요.');
+                return;
+            }
+            
+            showAlert('AI가 입력 내용을 개선하고 있습니다...', 'success');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const improvedText = `${inputEl.value} (AI 제안: 바이럴, 10대 타겟, 챌린지)`;
+            suggestionText.textContent = improvedText;
+            suggestionArea.classList.remove('hidden');
+        }
+
+        async function generateShorts() {
+            const inputEl = currentMode === 'keyword' ? document.getElementById('keyword') : document.getElementById('prompt');
+            if (!inputEl.value.trim()) {
+                showAlert('키워드나 프롬프트를 입력해주세요.');
+                return;
+            }
+
+            const formData = {
+                input: inputEl.value,
+                sceneCount: document.getElementById('sceneCount').value,
+            };
+
+            document.getElementById('loading-container').classList.remove('hidden');
+            document.getElementById('result-container').classList.add('hidden');
+            
+            try {
+                updateProgress(20, '대본 생성 중...');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                updateProgress(50, '음성 및 이미지 URL 생성 중...');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const result = createDemoResult(formData);
+                displayResult(result);
+                
+                updateProgress(100, '완료!');
+                document.getElementById('result-container').classList.remove('hidden');
+                showAlert('쇼츠 생성이 완료되었습니다.', 'success');
+
+            } catch (e) {
+                showAlert('생성 중 오류가 발생했습니다: ' + e.message);
+            } finally {
+                document.getElementById('loading-container').classList.add('hidden');
+            }
+        }
+
+        function createDemoResult(formData) {
+            const keywords = formData.input.split(',').map(k => k.trim()).filter(Boolean);
+            const mainKeyword = keywords[0] || 'video';
+
+            // 1. 스크립트 생성
+            const script = `[장면 1]
+주목! ${mainKeyword}에 대한 놀라운 사실!
+
+[장면 2]
+많은 사람들이 모르는 ${mainKeyword}의 비밀, 지금 바로 공개합니다.
+
+[장면 3]
+이것만 알면 당신도 전문가!
+
+[장면 4]
+더 많은 팁을 원한다면 구독과 좋아요!`;
+
+            // 2. 이미지 URL 생성
+            const images = [];
+            for (let i = 0; i < formData.sceneCount; i++) {
+                const keyword = keywords[i % keywords.length] || mainKeyword;
+                images.push({
+                    number: i + 1,
+                    imageUrl: `https://loremflickr.com/400/600/${encodeURIComponent(keyword)}?lock=${Date.now() + i}`
+                });
+            }
+
+            // 3. 오디오 URL 생성
+            const audioUrl = 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3';
+
+            return { script, images, audioUrl };
+        }
+
+        function displayResult(result) {
+            document.getElementById('script-result').textContent = result.script;
+            document.getElementById('audio-player').src = result.audioUrl;
+            
+            const imagesGrid = document.getElementById('images-grid');
+            imagesGrid.innerHTML = '';
+            result.images.forEach(scene => {
+                const sceneDiv = document.createElement('div');
+                sceneDiv.className = 'scene-image';
+                sceneDiv.innerHTML = `
+                    <div class="scene-number">장면 ${scene.number}</div>
+                    <img src="${scene.imageUrl}" alt="장면 ${scene.number}">
+                `;
+                imagesGrid.appendChild(sceneDiv);
+            });
+        }
+    </script>
     <!-- 네비게이션 로드 스크립트 -->
     <script src="script.js"></script>
 </body>
