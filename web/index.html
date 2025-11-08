@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI CLI - AI-powered Git Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-robot text-3xl text-indigo-600"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">AI CLI</h1>
+                        <p class="text-sm text-gray-500">AI-powered Git Assistant</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-500">Version 0.1.0</span>
+                    <button onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-gray-100">
+                        <i class="fas fa-moon text-gray-600"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Feature Cards -->
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <!-- Commit Message Generator -->
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <div class="flex items-center mb-4">
+                    <div class="bg-green-100 p-3 rounded-lg mr-4">
+                        <i class="fas fa-code-commit text-green-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900">커밋 메시지 생성</h2>
+                        <p class="text-sm text-gray-500">Conventional Commit 표준에 맞는 메시지 자동 생성</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            코드 변경 내용
+                        </label>
+                        <textarea
+                            id="commitInput"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            rows="6"
+                            placeholder="변경된 코드 내용을 입력하세요...&#10;예: 사용자 인증 기능 추가, 로그인 API 구현 등"
+                        ></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            추가 컨텍스트 (선택)
+                        </label>
+                        <input
+                            type="text"
+                            id="commitContext"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="예: JIRA-123, 사용자 이메일 인증 관련"
+                        >
+                    </div>
+
+                    <button
+                        onclick="generateCommitMessage()"
+                        class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                    >
+                        <i class="fas fa-magic mr-2"></i>
+                        커밋 메시지 생성
+                    </button>
+
+                    <div id="commitResult" class="hidden">
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">생성된 커밋 메시지</span>
+                                <button onclick="copyCommitMessage()" class="text-indigo-600 hover:text-indigo-700">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <div id="commitMessage" class="font-mono text-sm bg-white p-3 rounded border border-gray-300"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Change Explainer -->
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <div class="flex items-center mb-4">
+                    <div class="bg-blue-100 p-3 rounded-lg mr-4">
+                        <i class="fas fa-file-code text-blue-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900">코드 변경 설명</h2>
+                        <p class="text-sm text-gray-500">복잡한 코드 변경을 쉽게 설명</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            변경 전 코드
+                        </label>
+                        <textarea
+                            id="beforeCode"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                            rows="4"
+                            placeholder="변경 전 코드..."
+                        ></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            변경 후 코드
+                        </label>
+                        <textarea
+                            id="afterCode"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                            rows="4"
+                            placeholder="변경 후 코드..."
+                        ></textarea>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="detailedExplanation" class="rounded text-blue-600">
+                        <label for="detailedExplanation" class="text-sm text-gray-700">
+                            상세 분석 포함
+                        </label>
+                    </div>
+
+                    <button
+                        onclick="explainChanges()"
+                        class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                    >
+                        <i class="fas fa-search mr-2"></i>
+                        변경 사항 분석
+                    </button>
+
+                    <div id="explanationResult" class="hidden">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">코드 변경 분석</span>
+                                <button onclick="copyExplanation()" class="text-blue-600 hover:text-blue-700">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <div id="explanationContent" class="text-sm text-gray-700 space-y-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center mb-6">
+                <div class="bg-purple-100 p-3 rounded-lg mr-4">
+                    <i class="fas fa-cog text-purple-600 text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900">설정</h2>
+                    <p class="text-sm text-gray-500">AI CLI 동작 설정</p>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">기본 커밋 타입</label>
+                    <select id="defaultCommitType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <option value="feat">feat (새 기능)</option>
+                        <option value="fix">fix (버그 수정)</option>
+                        <option value="docs">docs (문서)</option>
+                        <option value="style">style (스타일)</option>
+                        <option value="refactor">refactor (리팩토링)</option>
+                        <option value="test">test (테스트)</option>
+                        <option value="chore">chore (기타)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">언어</label>
+                    <select id="language" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <option value="ko">한국어</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">AI 모델</label>
+                    <select id="aiModel" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <option value="gpt-4">GPT-4</option>
+                        <option value="gpt-3.5">GPT-3.5 Turbo</option>
+                        <option value="claude">Claude</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center">
+                <div class="flex justify-center space-x-6 mb-4">
+                    <a href="https://github.com/mon664/ai-cli" class="text-gray-500 hover:text-gray-700">
+                        <i class="fab fa-github text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-book text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-question-circle text-xl"></i>
+                    </a>
+                </div>
+                <p class="text-sm text-gray-500">
+                    Made with ❤️ by AI CLI Team |
+                    <a href="https://github.com/mon664/ai-cli" class="text-indigo-600 hover:text-indigo-700">GitHub</a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
