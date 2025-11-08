@@ -1,5 +1,52 @@
 // AI CLI Web Interface JavaScript
 
+// 통합 네비게이션 로드 (개선된 버전)
+async function loadNavigation() {
+    try {
+        const response = await fetch('components/top-navigation.html');
+        if (!response.ok) {
+            throw new Error('네비게이션 파일 로드 실패');
+        }
+        const navigationHTML = await response.text();
+        const navContainer = document.getElementById('navigation-container');
+        if (navContainer) {
+            navContainer.innerHTML = navigationHTML;
+            console.log('네비게이션이 성공적으로 로드되었습니다.');
+        }
+    } catch (error) {
+        console.error('네비게이션 로드 실패:', error);
+        // 네비게이션 로드 실패 시 기본 네비게이션 표시
+        const navContainer = document.getElementById('navigation-container');
+        if (navContainer) {
+            navContainer.innerHTML = `
+                <nav style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span style="font-size: 24px;">🚀</span>
+                                <span style="color: white; font-size: 20px; font-weight: bold;">AI 통합 플랫폼</span>
+                            </div>
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <a href="index.html" style="color: white; text-decoration: none; padding: 10px 16px; border-radius: 8px; background: rgba(255,255,255,0.1); transition: all 0.3s;">🏠 대시보드</a>
+                                <a href="data-input.html" style="color: white; text-decoration: none; padding: 10px 16px; border-radius: 8px; background: rgba(255,255,255,0.1); transition: all 0.3s;">📊 데이터 입력</a>
+                                <a href="shorts-generator.html" style="color: white; text-decoration: none; padding: 10px 16px; border-radius: 8px; background: rgba(255,255,255,0.1); transition: all 0.3s;">🎬 쇼츠 생성기</a>
+                                <a href="story-generator.html" style="color: white; text-decoration: none; padding: 10px 16px; border-radius: 8px; background: rgba(255,255,255,0.1); transition: all 0.3s;">📖 장면 생성기</a>
+                                <a href="character-generator.html" style="color: white; text-decoration: none; padding: 10px 16px; border-radius: 8px; background: rgba(255,255,255,0.1); transition: all 0.3s;">👤 캐릭터 생성기</a>
+                                <a href="blog-generator.html" style="color: white; text-decoration: none; padding: 10px 16px; border-radius: 8px; background: rgba(255,255,255,0.1); transition: all 0.3s;">📝 블로그 생성기</a>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+            `;
+        }
+    }
+}
+
+// 페이지 로드 시 네비게이션 로드
+document.addEventListener('DOMContentLoaded', function() {
+    loadNavigation();
+});
+
 // State Management
 const state = {
     isDarkMode: false,
@@ -26,8 +73,62 @@ const state = {
     }
 };
 
+// Load navigation component
+async function loadNavigation() {
+    try {
+        const response = await fetch('navigation.html');
+        if (!response.ok) {
+            throw new Error('네비게이션 파일 로드 실패');
+        }
+        const navigationHTML = await response.text();
+        const container = document.getElementById('navigation-container');
+        if (container) {
+            container.innerHTML = navigationHTML;
+
+            // 현재 페이지 강조
+            highlightCurrentPage();
+        } else {
+            console.error('네비게이션 컨테이너를 찾을 수 없습니다.');
+        }
+    } catch (error) {
+        console.error('네비게이션 로드 실패:', error);
+        // 대체 간단 네비게이션 표시
+        const container = document.getElementById('navigation-container');
+        if (container) {
+            container.innerHTML = `
+                <nav class="bg-blue-600 text-white p-4">
+                    <div class="max-w-7xl mx-auto flex justify-between">
+                        <h1 class="text-xl font-bold">AI 경리봇</h1>
+                        <div class="space-x-4">
+                            <a href="index.html" class="hover:underline">대시보드</a>
+                            <a href="data-input.html" class="hover:underline">데이터 입력</a>
+                            <a href="sales-analysis.html" class="hover:underline">매출 분석</a>
+                        </div>
+                    </div>
+                </nav>
+            `;
+        }
+    }
+}
+
+// 현재 페이지 강조
+function highlightCurrentPage() {
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    const navItems = document.querySelectorAll('.nav-item');
+
+    navItems.forEach(item => {
+        const href = item.getAttribute('href');
+        if (href === currentPage) {
+            item.classList.add('bg-white', 'bg-opacity-20');
+        } else {
+            item.classList.remove('bg-white', 'bg-opacity-20');
+        }
+    });
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
+    loadNavigation();
     loadSettings();
     setupEventListeners();
     checkSystemTheme();
@@ -374,8 +475,11 @@ function updateInterfaceLanguage() {
     console.log('Language changed to:', state.currentLanguage);
 }
 
+// API Configuration
+const API_BASE_URL = 'http://localhost:3001/api';
+
 // AI Chat Functions
-function sendChatMessage() {
+async function sendChatMessage() {
     const input = document.getElementById('chatInput');
     const message = input.value.trim();
 
@@ -383,15 +487,58 @@ function sendChatMessage() {
 
     // Add user message to chat
     addChatMessage(message, 'user');
+    showTypingIndicator();
 
     // Clear input
     input.value = '';
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message })
+        });
+
+        const data = await response.json();
+        removeTypingIndicator();
+        addChatMessage(data.response, 'ai');
+    } catch (error) {
+        removeTypingIndicator();
+        console.error('Error:', error);
+        // Fallback to mock response if backend is not available
         const response = generateAIResponse(message);
         addChatMessage(response, 'ai');
-    }, 1000);
+    }
+}
+
+function showTypingIndicator() {
+    const chatHistory = document.getElementById('chatHistory');
+    const typingDiv = document.createElement('div');
+    typingDiv.id = 'typing-indicator';
+    typingDiv.className = 'flex items-start space-x-2 fade-in';
+    typingDiv.innerHTML = `
+        <div class="bg-purple-100 p-2 rounded-lg">
+            <i class="fas fa-robot text-purple-600 text-sm"></i>
+        </div>
+        <div class="bg-gray-100 rounded-lg p-3 max-w-xs">
+            <div class="flex space-x-1">
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.2s"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.4s"></div>
+            </div>
+        </div>
+    `;
+    chatHistory.appendChild(typingDiv);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+}
+
+function removeTypingIndicator() {
+    const typingIndicator = document.getElementById('typing-indicator');
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
 }
 
 function addChatMessage(message, sender) {
@@ -414,7 +561,7 @@ function addChatMessage(message, sender) {
                 <i class="fas fa-robot text-purple-600 text-sm"></i>
             </div>
             <div class="bg-gray-100 rounded-lg p-3 max-w-xs">
-                <p class="text-sm text-gray-700">${message}</p>
+                <p class="text-sm text-gray-700 whitespace-pre-line">${message}</p>
             </div>
         `;
     }
@@ -466,59 +613,64 @@ async function analyzeSales() {
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>분석 중...';
 
-    // Simulate AI processing
-    await simulateAIProcessing();
+    try {
+        const response = await fetch(`${API_BASE_URL}/sales?period=${period}`);
+        const salesData = await response.json();
 
-    // Generate mock analysis
-    const periodData = {
-        daily: { sales: '5,000,000원', orders: 120, avgOrder: '41,666원' },
-        weekly: { sales: '35,000,000원', orders: 840, avgOrder: '41,666원' },
-        monthly: { sales: '150,000,000원', orders: 3600, avgOrder: '41,666원' }
-    };
+        // Calculate totals
+        let totalSales = 0;
+        let totalOrders = 0;
 
-    const data = periodData[period];
+        salesData.forEach(sale => {
+            totalSales += sale.total_amount;
+            totalOrders += 1;
+        });
 
-    contentDiv.innerHTML = `
-        <div class="space-y-2">
-            <div class="flex justify-between">
-                <span class="font-medium">총매출:</span>
-                <span class="text-green-600 font-semibold">${data.sales}</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="font-medium">주문 건수:</span>
-                <span>${data.orders}건</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="font-medium">평균 객단가:</span>
-                <span>${data.avgOrder}</span>
-            </div>
-            <div class="border-t pt-2 mt-2">
-                <p class="text-sm"><strong>상품별 매출:</strong></p>
-                ${state.salesData.products.map(product =>
-                    `<div class="flex justify-between text-xs">
-                        <span>${product.name}:</span>
-                        <span>${(product.sales/10000).toFixed(0)}만원 (${product.percentage}%)</span>
-                    </div>`
-                ).join('')}
-            </div>
-            <div class="border-t pt-2 mt-2">
+        contentDiv.innerHTML = `
+            <div class="space-y-2">
                 <div class="flex justify-between">
-                    <span class="font-medium">예상원가율:</span>
-                    <span>36%</span>
+                    <span class="font-medium">총매출:</span>
+                    <span class="text-green-600 font-semibold">${(totalSales/10000).toFixed(1)}만원</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="font-medium text-green-600">예상순이익:</span>
-                    <span class="text-green-600 font-semibold">${(parseInt(data.sales.replace(/[^0-9]/g, '')) * 0.38).toLocaleString()}원</span>
+                    <span class="font-medium">주문 건수:</span>
+                    <span>${totalOrders}건</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-medium">평균 객단가:</span>
+                    <span>${Math.round(totalSales/totalOrders).toLocaleString()}원</span>
+                </div>
+                <div class="border-t pt-2 mt-2">
+                    <p class="text-sm"><strong>최근 주문:</strong></p>
+                    ${salesData.slice(0, 5).map(sale =>
+                        `<div class="flex justify-between text-xs mb-1">
+                            <span>${sale.customer_name}</span>
+                            <span>${(sale.total_amount/10000).toFixed(1)}만원</span>
+                        </div>`
+                    ).join('')}
+                </div>
+                <div class="border-t pt-2 mt-2">
+                    <div class="flex justify-between">
+                        <span class="font-medium">예상원가율:</span>
+                        <span>36%</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-green-600">예상순이익:</span>
+                        <span class="text-green-600 font-semibold">${Math.round(totalSales * 0.38).toLocaleString()}원</span>
+                    </div>
                 </div>
             </div>
-        </div>
-    `;
+        `;
 
-    resultDiv.classList.remove('hidden');
-    button.disabled = false;
-    button.innerHTML = '<i class="fas fa-chart-bar mr-2"></i>매출 분석 실행';
-
-    showNotification('매출 분석이 완료되었습니다!', 'success');
+        resultDiv.classList.remove('hidden');
+        showNotification('최신 매출 데이터가 로드되었습니다!', 'success');
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('데이터 로드에 실패했습니다. 백엔드 서버를 확인해주세요.', 'error');
+    } finally {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-chart-bar mr-2"></i>매출 분석 실행';
+    }
 }
 
 // Inventory Management Functions

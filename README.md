@@ -1,143 +1,155 @@
-# AI CLI - AI-powered Git Assistant
+# AI 경리봇 완전 시스템
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Rust](https://img.shields.io/badge/rust-1.91+-orange.svg)](https://www.rust-lang.org)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
+완전한 기능의 AI 경리봇 웹 시스템입니다. 실제 데이터베이스와 백엔드 서버로 동작합니다.
 
-AI CLI는 개발자의 Git 워크플로우를 혁신하는 지능형 커맨드 라인 도구입니다. 전문적인 커밋 메시지를 자동 생성하고 코드 변경 사항을 설명해줍니다.
+## 🚀 주요 기능
 
-## ✨ 주요 기능
+### 비즈니스 관리
+- **매출 관리**: 고객별 판매 기록, 매출 통계
+- **제품 관리**: 상품 등록, 재고 추적
+- **재고 관리**: 실시간 재고 현황, 부족 알림
+- **생산 관리**: 생산 계획, 작업 지시
 
-- 🤖 **AI 기반 커밋 메시지 생성**: Conventional Commit 표준에 맞는 전문적인 메시지 생성
-- 📝 **코드 변경 사항 설명**: 복잡한 코드 변경을 이해하기 쉬운 자연어로 설명
-- ⚡ **고성능**: Rust로 구현된 빠른 네이티브 바이너리
-- 🚀 **경량화**: 최소한의 의존성으로 빠른 설치와 실행
+### 품질 관리
+- **온도 기록**: 냉장/냉동 온도 모니터링
+- **HACCP 관리**: 식품 안전 기록, 검사 결과
 
-## 🚀 빠른 시작
+### AI 기능
+- **AI 채팅**: 자연어 비즈니스 문의
+- **실시간 분석**: 매출趋势, 재고 현황
+- **스마트 알림**: 업무 자동화
 
-### 설치
+## 📋 시스템 요구사항
 
-**Cargo를 통해 설치 (권장):**
+- Windows 10/11
+- Node.js (v14 이상)
+- 웹 브라우저 (Chrome, Firefox 등)
+
+## 🛠️ 설치 및 실행
+
+### 1. 자동 실행 (권장)
+```
+start.bat 파일 더블클릭
+```
+
+### 2. 수동 실행
 ```bash
-cargo install ai-cli
+# 1. 백엔드 서버 시작
+cd backend
+npm install
+mkdir database
+node server.js
+
+# 2. 웹 브라우저에서 접속
+# http://localhost:3001
+# 또는 web/index.html 파일 열기
 ```
 
-**직접 빌드:**
-```bash
-git clone https://github.com/mon664/ai-cli.git
-cd ai-cli
-cargo build --release
-```
-
-### 기본 사용법
-
-```bash
-# Git 리포지토리에서
-cd your-project
-
-# 커밋 메시지 생성
-ai-cli commit
-
-# 특정 메시지 사용
-ai-cli commit --message "feat: add user authentication"
-
-# 변경 사항 설명
-ai-cli explain
-
-# 특정 커밋 분석
-ai-cli explain --hash abc1234
-
-# 설정 확인
-ai-cli config --verbose
-```
-
-## 📋 사용 예시
-
-### 커밋 메시지 생성
-```bash
-$ ai-cli commit
-🤖 AI is generating your commit message...
-✨ Generated message: feat: add new feature implementation
-✅ Commit successful!
-```
-
-### 코드 변경 설명
-```bash
-$ ai-cli explain
-🔍 AI is analyzing the changes...
-📄 Analysis: This change adds new functionality to improve user experience.
-```
-
-## 🏗️ 아키텍처
-
-AI CLI는 다음과 같은 핵심 구성 요소로 이루어져 있습니다:
+## 📁 파일 구조
 
 ```
-ai-cli/
-├── src/
-│   ├── main.rs          # 엔트리 포인트
-│   └── cli.rs           # CLI 인터페이스 정의
-└── Cargo.toml           # 프로젝트 설정
+ai-cli-minimal/
+├── start.bat              # 자동 실행 스크립트
+├── README.md              # 사용 설명서
+├── backend/               # 백엔드 서버
+│   ├── server.js          # 메인 서버 파일
+│   ├── package.json       # 의존성 설정
+│   ├── .env              # 환경 변수
+│   └── database/         # 데이터베이스 파일
+└── web/                  # 웹 인터페이스
+    ├── index.html        # 메인 대시보드
+    ├── data-input.html   # 데이터 입력 화면
+    ├── script.js         # 메인 JavaScript
+    ├── data-input.js     # 데이터 입력 JavaScript
+    └── style.css         # 스타일시트
 ```
 
-## ⚙️ 설정
+## 🎯 사용 방법
 
-AI CLI는 설정 파일 없이 바로 사용할 수 있습니다. 추가 설정은 향후 버전에서 제공될 예정입니다.
+### 1. 시스템 시작
+- `start.bat` 파일을 더블클릭하면 자동으로 시작됩니다
+- 백엔드 서버와 웹 브라우저가 열립니다
 
-## 🔧 개발
+### 2. 초기 데이터 입력
+- 데이터 입력 화면에서 제품, 매출, 재고 정보를 입력합니다
+- 실제 비즈니스 데이터를 기반으로 시스템을 구축합니다
 
-### 빌드 요구사항
-- Rust 1.91 이상
+### 3. 메인 기능 사용
+- **대시보드**: 실시간 현황 파악
+- **AI 채팅**: "오늘 매출 알려줘", "재고 부족 상품" 등 질문
+- **데이터 분석**: 매출 추세, 인기 상품 분석
 
-### 로컬 개발 환경 설정
+### 4. 데이터 관리
+- 정기적으로 새로운 매출 데이터 입력
+- 재고 현황 업데이트
+- 품질 관리 기록 (온도, HACCP)
 
-```bash
-# 리포지토리 클론
-git clone https://github.com/mon664/ai-cli.git
-cd ai-cli
+## 🔧 API 엔드포인트
 
-# 빌드
-cargo build --release
+### 제품 관리
+- `GET /api/products` - 제품 목록
+- `POST /api/products` - 제품 추가
 
-# 테스트
-cargo test
+### 매출 관리
+- `GET /api/sales` - 매출 목록
+- `POST /api/sales` - 매출 추가
 
-# 실행
-./target/release/ai-cli --help
-```
+### 재고 관리
+- `GET /api/inventory` - 재고 목록
+- `POST /api/inventory` - 재고 업데이트
 
-## 🤝 기여하기
+### AI 채팅
+- `POST /api/chat` - AI 질의응답
 
-기여를 환영합니다! 다음 단계를 따라주세요:
+## 📊 데이터베이스
 
-1. 이 리포지토리를 포크하세요
-2. 기능 브랜치를 생성하세요 (`git checkout -b feature/amazing-feature`)
-3. 변경 사항을 커밋하세요 (`git commit -m 'feat: add amazing feature'`)
-4. 브랜치에 푸시하세요 (`git push origin feature/amazing-feature`)
-5. Pull Request를 생성하세요
+SQLite 데이터베이스를 사용하며, 아래 테이블로 구성됩니다:
+- `products` - 제품 정보
+- `sales` - 매출 기록
+- `sale_items` - 판매 품목
+- `inventory` - 재고 현황
+- `temperature_records` - 온도 기록
+- `haccp_records` - HACCP 기록
 
-## 📄 라이선스
+## 🎨 화면 구성
 
-이 프로젝트는 Apache License 2.0 하에 라이선스가 부여됩니다. [LICENSE](LICENSE) 파일을 참조하세요.
+### 메인 대시보드 (index.html)
+- 실시간 통계
+- AI 채팅 인터페이스
+- 매출/재고/생산 현황
+- 품질 관리 상태
 
-## 🔗 관련 프로젝트
+### 데이터 입력 (data-input.html)
+- 매출 입력
+- 제품 등록
+- 재고 관리
+- 온도/HACCP 기록
 
-- [aicommits](https://github.com/NVIDIA/ai-commits) - 커밋 메시지 생성
-- [git-ai](https://github.com/gpt-engineer-org/git-ai) - Git 작업 자동화
-- [diff-explainer](https://github.com/pwwang/diff-explainer) - Diff 설명
+## 🚨 주의사항
 
-## 🙏 감사
+1. **백엔드 서버**: 반드시 백엔드 서버가 먼저 실행되어야 합니다
+2. **데이터 백업**: 정기적으로 `database/` 폴더를 백업하세요
+3. **보안**: 실제 운영 시에는 보안 설정 강화가 필요합니다
 
-AI CLI는 다음 프로젝트에서 영감을 받았습니다:
-- [clap](https://github.com/clap-rs/clap) - CLI 프레임워크
-- [anyhow](https://github.com/dtolnay/anyhow) - 오류 처리
+## 🐛 문제 해결
+
+### 서버가 시작되지 않을 경우
+1. Node.js가 설치되어 있는지 확인
+2. `backend/` 폴더에서 `npm install` 실행
+3. 포트 3001이 사용 중인지 확인
+
+### 데이터가 표시되지 않을 경우
+1. 백엔드 서버가 실행 중인지 확인
+2. 브라우저 콘솔에서 에러 메시지 확인
+3. API 연결 상태 확인
 
 ## 📞 지원
 
-- 🐛 [버그 리포트](https://github.com/mon664/ai-cli/issues)
-- 💡 [기능 요청](https://github.com/mon664/ai-cli/issues)
-- 💬 [토론](https://github.com/mon664/ai-cli/discussions)
+문제가 발생하면 아래를 확인하세요:
+1. 백엔드 서버 로그 확인
+2. 브라우저 개발자 도구 콘솔 확인
+3. 데이터베이스 파일 유무 확인
 
 ---
 
-**AI CLI** - 개발자 워크플로우를 위한 스마트한 AI 파트너 🚀
+**AI 경리봇 완전 시스템** - 실제 비즈니스 관리를 위한 완벽한 솔루션

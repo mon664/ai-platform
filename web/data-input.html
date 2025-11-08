@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>데이터 입력 - AI 경리봇</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- 통합 네비게이션 -->
+    <div id="navigation-container"></div>
+
+    <div class="min-h-screen py-8">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Header -->
+            <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">📊 데이터 입력</h1>
+                <p class="text-gray-600">실제 비즈니스 데이터를 입력하여 AI 경리봇에 반영시켜주세요</p>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white shadow rounded-lg p-4">
+                    <h3 class="text-sm font-medium text-gray-500">총 매출</h3>
+                    <p class="text-2xl font-bold text-green-600" id="totalSales">0원</p>
+                </div>
+                <div class="bg-white shadow rounded-lg p-4">
+                    <h3 class="text-sm font-medium text-gray-500">총 상품</h3>
+                    <p class="text-2xl font-bold text-blue-600" id="totalProducts">0개</p>
+                </div>
+                <div class="bg-white shadow rounded-lg p-4">
+                    <h3 class="text-sm font-medium text-gray-500">재고 부족</h3>
+                    <p class="text-2xl font-bold text-orange-600" id="lowStockItems">0개</p>
+                </div>
+                <div class="bg-white shadow rounded-lg p-4">
+                    <h3 class="text-sm font-medium text-gray-500">오늘 주문</h3>
+                    <p class="text-2xl font-bold text-purple-600" id="todayOrders">0건</p>
+                </div>
+            </div>
+
+            <!-- Data Input Forms -->
+            <div class="space-y-6">
+                <!-- Sales Input -->
+                <div class="bg-white shadow-lg rounded-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">💰 매출 입력</h2>
+
+                    <form id="salesForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">거래처명</label>
+                            <input type="text" name="customer_name" required
+                                   class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">상품 추가</label>
+                            <div id="salesItems" class="space-y-2 mb-4">
+                                <div class="flex items-center space-x-2">
+                                    <select name="product_id" class="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">상품 선택</option>
+                                    </select>
+                                    <input type="number" name="quantity" placeholder="수량" min="1"
+                                           class="w-24 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <input type="number" name="unit_price" placeholder="단가" min="0"
+                                           class="w-24 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <button type="button" onclick="addSalesItem()"
+                                            class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                        +
+                                    </button>
+                                    <button type="button" onclick="removeSalesItem(this)"
+                                            class="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                                        -
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-500">총 금액: <span id="salesTotal">0</span>원</div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">비고 (선택)</label>
+                            <textarea name="notes" rows="3"
+                                      class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="특이 사항 입력..."></textarea>
+                        </div>
+
+                        <button type="submit"
+                                class="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700">
+                            매출 등록
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Product Management -->
+                <div class="bg-white shadow-lg rounded-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">📦 상품 관리</h2>
+
+                    <form id="productForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">상품명</label>
+                                <input type="text" name="name" required
+                                       class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+                                <select name="category" required
+                                        class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                    <option value="완제품">완제품</option>
+                                    <option value="원자재">원자재</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">단위</label>
+                                <input type="text" name="unit" required
+                                       class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">판매가</label>
+                                <input type="number" name="unit_price" required min="0" step="100"
+                                       class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">원가</label>
+                                <input type="number" name="cost" required min="0" step="100"
+                                       class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                            </div>
+                        </div>
+
+                        <button type="submit"
+                                class="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700">
+                            상품 등록
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Inventory Management -->
+                <div class="bg-white shadow-lg rounded-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">📦 재고 관리</h2>
+
+                    <form id="inventoryForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">상품</label>
+                                <select id="inventoryProduct" name="product_id" required
+                                        class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">상품 선택</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">현재 수량</label>
+                                <input type="number" name="quantity" required min="0"
+                                       class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">최소 수량</label>
+                                <input type="number" name="min_quantity" required min="0"
+                                       class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">위치</label>
+                                <input type="text" name="location" required"
+                                       class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+
+                        <button type="submit"
+                                class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700">
+                            재고 업데이트
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Temperature Recording -->
+                <div class="bg-white shadow-lg rounded-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">🌡️ 온도 기록</h2>
+
+                    <form id="temperatureForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">측정 위치</label>
+                                <input type="text" name="location" required"
+                                       class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                       placeholder="예: 냉장고 A">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">온도 (°C)</label>
+                                <input type="number" name="temperature" required step="0.1"
+                                       class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                       placeholder="예: 4.0">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">비고 (선택)</label>
+                            <input type="text" name="notes"
+                                   class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                   placeholder="온도 상태, 특이사항 등">
+                        </div>
+
+                        <button type="submit"
+                                class="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700">
+                            온도 기록
+                        </button>
+                    </form>
+                </div>
+
+                <!-- HACCP Recording -->
+                <div class="bg-white shadow-lg rounded-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">🛡️ HACCP 기록</h2>
+
+                    <form id="haccpForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">검사 유형</label>
+                                <select name="check_type" required
+                                        class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="선행요건관리">선행요건관리(PPR)</option>
+                                    <option value="중요관리점(CCP)">중요관리점(CCP)</option>
+                                    <option value="원료검수">원료검수</option>
+                                    <option value="제조공정">제조공정</option>
+                                    <option value="보관/운송">보관/운송</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">상태</label>
+                                <select name="status" required
+                                        class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="양호">양호</option>
+                                    <option value="주의">주의</option>
+                                    <option value="부적합">부적합</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">세부사항</label>
+                            <textarea name="details" rows="3"
+                                      class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                      placeholder="검사 결과 세부사항..."></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">검사자</label>
+                            <input type="text" name="inspector"
+                                   class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                   placeholder="검사자 성명">
+                        </div>
+
+                        <button type="submit"
+                                class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700">
+                            HACCP 기록
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="bg-white shadow-lg rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">📋 최근 활동</h2>
+                <div id="activityLog" class="space-y-2 max-h-64 overflow-y-auto">
+                    <p class="text-gray-500">최근 활동이 없습니다.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 네비게이션 로드 스크립트 -->
+    <script src="script.js"></script>
+    <script src="data-input.js"></script>
+</body>
+</html>

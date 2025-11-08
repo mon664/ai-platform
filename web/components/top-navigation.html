@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 AI 통합 플랫폼 상단 메뉴</title>
+    <style>
+        /* 전체 스타일 리셋 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* 상단 네비게이션 바 */
+        .top-navigation {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+        }
+
+        /* 브랜드 로고 */
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            font-size: 28px;
+            animation: pulse 2s infinite;
+        }
+
+        .brand-title {
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* 메인 메뉴 */
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .nav-item {
+            position: relative;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 15px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .nav-link.active {
+            background: rgba(255,255,255,0.3);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.4);
+        }
+
+        /* 우측 정보 */
+        .nav-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            color: white;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+
+        .current-time {
+            font-weight: bold;
+            font-size: 16px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* 모바일 버튼 */
+        .mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* 모바일 메뉴 */
+        .mobile-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu.active {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .mobile-menu .nav-link {
+            width: 100%;
+            justify-content: center;
+            padding: 15px 20px;
+        }
+
+        /* 애니메이션 */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .top-navigation {
+            animation: slideDown 0.5s ease-out;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+
+            .nav-info {
+                display: none;
+            }
+
+            .mobile-toggle {
+                display: block;
+            }
+
+            .mobile-menu {
+                display: flex;
+            }
+
+            .nav-container {
+                padding: 0 15px;
+            }
+
+            .brand-title {
+                font-size: 18px;
+            }
+
+            .nav-link {
+                font-size: 16px;
+                padding: 15px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .brand-title {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-navigation">
+        <div class="nav-container">
+            <!-- 브랜드 -->
+            <div class="nav-brand">
+                <span class="brand-logo">🚀</span>
+                <span class="brand-title">AI 통합 플랫폼</span>
+            </div>
+
+            <!-- 메인 메뉴 -->
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link" data-page="home">
+                        <span>🏠</span>
+                        <span>대시보드</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="data-input.html" class="nav-link" data-page="data">
+                        <span>📊</span>
+                        <span>데이터 입력</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="shorts-generator.html" class="nav-link" data-page="shorts">
+                        <span>🎬</span>
+                        <span>쇼츠 생성기</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="story-generator.html" class="nav-link" data-page="story">
+                        <span>📖</span>
+                        <span>장면 생성기</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="character-generator.html" class="nav-link" data-page="character">
+                        <span>👤</span>
+                        <span>캐릭터 생성기</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="blog-generator.html" class="nav-link" data-page="blog">
+                        <span>📝</span>
+                        <span>블로그 생성기</span>
+                    </a>
+                </li>
+            </ul>
+
+            <!-- 우측 정보 -->
+            <div class="nav-info">
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span>시스템 정상</span>
+                </div>
+                <div class="current-time" id="current-time">00:00</div>
+            </div>
+
+            <!-- 모바일 토글 버튼 -->
+            <button class="mobile-toggle" onclick="toggleMobileMenu()">
+                ☰
+            </button>
+        </div>
+
+        <!-- 모바일 메뉴 -->
+        <div class="mobile-menu" id="mobile-menu">
+            <a href="index.html" class="nav-link" data-page="home">
+                <span>🏠</span>
+                <span>대시보드</span>
+            </a>
+            <a href="data-input.html" class="nav-link" data-page="data">
+                <span>📊</span>
+                <span>데이터 입력</span>
+            </a>
+            <a href="shorts-generator.html" class="nav-link" data-page="shorts">
+                <span>🎬</span>
+                <span>쇼츠 생성기</span>
+            </a>
+            <a href="story-generator.html" class="nav-link" data-page="story">
+                <span>📖</span>
+                <span>장면 생성기</span>
+            </a>
+            <a href="character-generator.html" class="nav-link" data-page="character">
+                <span>👤</span>
+                <span>캐릭터 생성기</span>
+            </a>
+            <a href="blog-generator.html" class="nav-link" data-page="blog">
+                <span>📝</span>
+                <span>블로그 생성기</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        // 현재 페이지 감지 및 활성화
+        function setActivePage() {
+            const currentPath = window.location.pathname.split('/').pop() || 'index.html';
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                const href = link.getAttribute('href');
+
+                if (href === currentPath ||
+                    (currentPath.includes('shorts') && href.includes('shorts-generator')) ||
+                    (currentPath.includes('story') && href.includes('story-generator')) ||
+                    (currentPath.includes('character') && href.includes('character-generator')) ||
+                    (currentPath.includes('blog') && href.includes('blog-generator')) ||
+                    (currentPath.includes('data-input') && href.includes('data-input')) ||
+                    (currentPath === '' && href === 'index.html')) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        // 현재 시간 업데이트
+        function updateCurrentTime() {
+            const timeElement = document.getElementById('current-time');
+            if (timeElement) {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('ko-KR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                timeElement.textContent = timeString;
+            }
+        }
+
+        // 모바일 메뉴 토글
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu) {
+                mobileMenu.classList.toggle('active');
+            }
+        }
+
+        // 외부 클릭 시 모바일 메뉴 닫기
+        document.addEventListener('click', function(event) {
+            const nav = document.querySelector('.top-navigation');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileToggle = document.querySelector('.mobile-toggle');
+
+            if (!nav.contains(event.target) && mobileMenu && mobileMenu.classList.contains('active')) {
+                mobileMenu.classList.remove('active');
+            }
+        });
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            setActivePage();
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+
+            // 링크 클릭 시 부드러운 전환 효과
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const href = this.getAttribute('href');
+                    if (href.startsWith('#')) {
+                        e.preventDefault();
+                        const target = document.querySelector(href);
+                        if (target) {
+                            target.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }
+                });
+            });
+        });
+
+        // 키보드 내비게이션 지원
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const mobileMenu = document.getElementById('mobile-menu');
+                if (mobileMenu) {
+                    mobileMenu.classList.remove('active');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

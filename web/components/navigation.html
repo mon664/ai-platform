@@ -1,0 +1,389 @@
+<!-- 통합 네비게이션 컴포넌트 -->
+<nav class="main-navigation">
+    <div class="nav-container">
+        <div class="nav-brand">
+            <h2>🚀 AI 통합 플랫폼</h2>
+        </div>
+
+        <div class="nav-menu-toggle" onclick="toggleMobileMenu()">
+            <span>☰</span>
+        </div>
+
+        <ul class="nav-menu" id="nav-menu">
+            <!-- 비즈니스 관리 섹션 -->
+            <li class="nav-category">
+                <span class="category-title">📊 비즈니스 관리</span>
+                <ul class="nav-submenu">
+                    <li><a href="index.html" class="nav-link">🏠 대시보드</a></li>
+                    <li><a href="data-input.html" class="nav-link">📝 데이터 입력</a></li>
+                </ul>
+            </li>
+
+            <!-- AI 콘텐츠 생성 섹션 -->
+            <li class="nav-category">
+                <span class="category-title">🤖 AI 콘텐츠 생성</span>
+                <ul class="nav-submenu">
+                    <li><a href="shorts-generator.html" class="nav-link">🎬 쇼츠 생성기</a></li>
+                    <li><a href="story-generator.html" class="nav-link">📖 장면 생성기</a></li>
+                    <li><a href="character-generator.html" class="nav-link">👤 캐릭터 생성기</a></li>
+                    <li><a href="blog-generator.html" class="nav-link">📝 블로그 생성기</a></li>
+                </ul>
+            </li>
+
+            <!-- 시스템 관리 섹션 -->
+            <li class="nav-category">
+                <span class="category-title">⚙️ 시스템 관리</span>
+                <ul class="nav-submenu">
+                    <li><a href="#" class="nav-link" onclick="openSettings()">🔧 설정</a></li>
+                    <li><a href="#" class="nav-link" onclick="openAnalytics()">📈 분석</a></li>
+                    <li><a href="#" class="nav-link" onclick="openHelp()">❓ 도움말</a></li>
+                </ul>
+            </li>
+        </ul>
+
+        <div class="nav-user">
+            <div class="user-info">
+                <span class="user-status">🟢 시스템 정상</span>
+                <span class="current-time" id="current-time"></span>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- 네비게이션 스타일 -->
+<style>
+.main-navigation {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 70px;
+}
+
+.nav-brand h2 {
+    color: white;
+    margin: 0;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.nav-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.nav-menu {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 30px;
+    align-items: center;
+}
+
+.nav-category {
+    position: relative;
+}
+
+.category-title {
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 10px 15px;
+    border-radius: 8px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.category-title:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.nav-submenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    padding: 10px 0;
+    min-width: 200px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s;
+    list-style: none;
+    margin: 0;
+    margin-top: 5px;
+}
+
+.nav-category:hover .nav-submenu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.nav-submenu li {
+    margin: 0;
+}
+
+.nav-link {
+    display: block;
+    padding: 12px 20px;
+    color: #333;
+    text-decoration: none;
+    transition: all 0.3s;
+    font-size: 14px;
+    border-left: 3px solid transparent;
+}
+
+.nav-link:hover {
+    background: #f8f9fa;
+    color: #667eea;
+    border-left-color: #667eea;
+    padding-left: 25px;
+}
+
+.nav-link.active {
+    background: #e3f2fd;
+    color: #1976d2;
+    border-left-color: #1976d2;
+    font-weight: bold;
+}
+
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-info {
+    text-align: right;
+    color: white;
+}
+
+.user-status {
+    display: block;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.current-time {
+    display: block;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+    .nav-menu-toggle {
+        display: block;
+    }
+
+    .nav-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: 20px;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-20px);
+        transition: all 0.3s;
+        max-height: 0;
+        overflow: hidden;
+    }
+
+    .nav-menu.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .nav-category {
+        width: 100%;
+    }
+
+    .nav-submenu {
+        position: static;
+        background: rgba(255,255,255,0.1);
+        margin: 10px 0 0 0;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        box-shadow: none;
+        border-radius: 8px;
+    }
+
+    .nav-link {
+        color: white;
+        padding: 10px 20px;
+    }
+
+    .nav-link:hover {
+        background: rgba(255,255,255,0.1);
+        color: white;
+        border-left-color: white;
+    }
+
+    .nav-user {
+        display: none;
+    }
+
+    .nav-container {
+        height: auto;
+        padding: 15px 20px;
+    }
+
+    .nav-brand h2 {
+        font-size: 20px;
+    }
+}
+
+/* 현재 페이지 표시 */
+.nav-link[href*="shorts-generator"]:hover,
+.nav-link[href*="story-generator"]:hover,
+.nav-link[href*="character-generator"]:hover,
+.nav-link[href*="blog-generator"]:hover,
+.nav-link[href*="data-input"]:hover,
+.nav-link[href="index.html"]:hover {
+    transform: translateX(5px);
+}
+
+/* 애니메이션 효과 */
+@keyframes slideInDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.main-navigation {
+    animation: slideInDown 0.5s ease-out;
+}
+</style>
+
+<!-- 네비게이션 JavaScript -->
+<script>
+// 현재 페이지 감지 및 활성화
+function setActiveNavigation() {
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    navLinks.forEach(link => {
+        link.classList.remove('active');
+
+        const href = link.getAttribute('href');
+        if (href === currentPage ||
+            (currentPage.includes('shorts') && href.includes('shorts-generator')) ||
+            (currentPage.includes('story') && href.includes('story-generator')) ||
+            (currentPage.includes('character') && href.includes('character-generator')) ||
+            (currentPage.includes('blog') && href.includes('blog-generator')) ||
+            (currentPage.includes('data-input') && href.includes('data-input')) ||
+            (currentPage === '' && href === 'index.html')) {
+            link.classList.add('active');
+        }
+    });
+}
+
+// 모바일 메뉴 토글
+function toggleMobileMenu() {
+    const navMenu = document.getElementById('nav-menu');
+    navMenu.classList.toggle('active');
+}
+
+// 현재 시간 표시
+function updateCurrentTime() {
+    const timeElement = document.getElementById('current-time');
+    if (timeElement) {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('ko-KR', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        timeElement.textContent = timeString;
+    }
+}
+
+// 설정 열기
+function openSettings() {
+    alert('설정 기능은 곧 추가될 예정입니다.');
+}
+
+// 분석 열기
+function openAnalytics() {
+    alert('분석 대시보드는 곧 추가될 예정입니다.');
+}
+
+// 도움말 열기
+function openHelp() {
+    alert('도움말 섹션은 곧 추가될 예정입니다.');
+}
+
+// 페이지 로드 시 초기화
+document.addEventListener('DOMContentLoaded', function() {
+    setActiveNavigation();
+    updateCurrentTime();
+    setInterval(updateCurrentTime, 1000);
+
+    // 외부 클릭 시 모바일 메뉴 닫기
+    document.addEventListener('click', function(event) {
+        const nav = document.querySelector('.main-navigation');
+        const navMenu = document.getElementById('nav-menu');
+        const menuToggle = document.querySelector('.nav-menu-toggle');
+
+        if (!nav.contains(event.target) && navMenu.classList.contains('active')) {
+            navMenu.classList.remove('active');
+        }
+    });
+
+    // 키보드 내비게이션 지원
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const navMenu = document.getElementById('nav-menu');
+            navMenu.classList.remove('active');
+        }
+    });
+});
+
+// 페이지 이동 시 부드러운 스크롤
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+        const href = this.getAttribute('href');
+        if (href.startsWith('#')) {
+            e.preventDefault();
+            const target = document.querySelector(href);
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    });
+});
+</script>
