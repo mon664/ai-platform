@@ -418,7 +418,7 @@
                     number: i + 1,
                     title: storyStructure[i].title,
                     description: storyStructure[i].description,
-                    imageUrl: `https://loremflickr.com/400/600/${encodeURIComponent(keyword)}?lock=${Date.now() + i}`,
+                    imageUrl: `https://via.placeholder.com/400x600.png?text=${encodeURIComponent(keyword)}`,
                     prompt: `${formData.storyPrompt} - 장면 ${i + 1}: ${storyStructure[i].title}, ${formData.imageStyle} 스타일, ${formData.mood} 분위기`
                 };
                 scenes.push(scene);

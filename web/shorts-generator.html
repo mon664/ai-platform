@@ -409,7 +409,7 @@
                 const keyword = keywords[i % keywords.length] || mainKeyword;
                 images.push({
                     number: i + 1,
-                    imageUrl: `https://loremflickr.com/400/600/${encodeURIComponent(keyword)}?lock=${Date.now() + i}`
+                    imageUrl: `https://via.placeholder.com/400x600.png?text=${encodeURIComponent(keyword)}`
                 });
             }
 
