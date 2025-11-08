@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📝 고급 블로그 콘텐츠 생성기 - 전문가 도구</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .blog-card {
+            transition: all 0.3s ease;
+        }
+
+        .blog-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .seo-score {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .content-preview {
+            background: #f8fafc;
+            border-left: 4px solid #4299e1;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .outline-item {
+            padding: 12px;
+            margin: 8px 0;
+            background: white;
+            border-radius: 8px;
+            border-left: 3px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .outline-item:hover {
+            border-left-color: #4299e1;
+            box-shadow: 0 2px 8px rgba(66, 153, 225, 0.1);
+        }
+
+        .keyword-tag {
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 4px;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+
+        .keyword-tag:hover {
+            background: #c7d2fe;
+            transform: translateY(-1px);
+        }
+
+        .template-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .template-card:hover {
+            border-color: #4299e1;
+            background: #ebf8ff;
+        }
+
+        .template-card.selected {
+            border-color: #4299e1;
+            background: #dbeafe;
+        }
+
+        .tone-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tone-option {
+            padding: 10px 16px;
+            background: #f3f4f6;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tone-option:hover {
+            background: #e5e7eb;
+        }
+
+        .tone-option.selected {
+            background: #4299e1;
+            color: white;
+            border-color: #3182ce;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .generating {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .export-option {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .export-option:hover {
+            border-color: #4299e1;
+            background: #ebf8ff;
+        }
+
+        .reading-time {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 통합 네비게이션 로드 -->
+    <div id="navigation-container"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 헤더 -->
+        <div class="gradient-bg rounded-xl shadow-xl p-8 mb-8 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold mb-3">📝 고급 블로그 콘텐츠 생성기</h1>
+                    <p class="text-xl opacity-90">SEO 최적화된 전문가 수준의 블로그 콘텐츠 생성</p>
+                </div>
+                <div class="text-center">
+                    <div class="text-5xl mb-2">✍️</div>
+                    <div class="text-lg font-bold">PRO CONTENT</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 왼쪽 패널: 입력 설정 -->
+            <div class="lg:col-span-1">
+                <!-- 템플릿 선택 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6 blog-card">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">
+                        <i class="fas fa-file-alt mr-2 text-blue-500"></i>블로그 템플릿
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="template-card" data-template="howto">
+                            <div class="flex items-center">
+                                <div class="bg-blue-100 p-3 rounded-lg mr-3">
+                                    <i class="fas fa-lightbulb text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold">How-to 가이드</h4>
+                                    <p class="text-sm text-gray-600">단계별 설명형 콘텐츠</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="template-card" data-template="listicle">
+                            <div class="flex items-center">
+                                <div class="bg-green-100 p-3 rounded-lg mr-3">
+                                    <i class="fas fa-list-ol text-green-600"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold">리스트형</h4>
+                                    <p class="text-sm text-gray-600">순위 리스트, 팁 모음</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="template-card" data-template="review">
+                            <div class="flex items-center">
+                                <div class="bg-purple-100 p-3 rounded-lg mr-3">
+                                    <i class="fas fa-star text-purple-600"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold">제품/서비스 리뷰</h4>
+                                    <p class="text-sm text-gray-600">상세한 분석과 평가</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="template-card" data-template="comparison">
+                            <div class="flex items-center">
+                                <div class="bg-orange-100 p-3 rounded-lg mr-3">
+                                    <i class="fas fa-balance-scale text-orange-600"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold">비교 분석</h4>
+                                    <p class="text-sm text-gray-600">A/B 비교, 장단점 분석</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 기본 정보 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6 blog-card">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">
+                        <i class="fas fa-info-circle mr-2 text-green-500"></i>기본 정보
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">메인 키워드</label>
+                            <input
+                                type="text"
+                                id="mainKeyword"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="예: 다이어트 방법"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">관련 키워드</label>
+                            <input
+                                type="text"
+                                id="relatedKeywords"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="예: 건강, 운동, 식단, 체중감량"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">타겟 독자</label>
+                            <select id="targetAudience" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="beginners">초보자</option>
+                                <option value="intermediate">중급자</option>
+                                <option value="experts">전문가</option>
+                                <option value="general">일반 대중</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">예상 길이</label>
+                            <select id="contentLength" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="short">짧음 (800-1200단어)</option>
+                                <option value="medium">중간 (1200-2000단어)</option>
+                                <option value="long">깊이 (2000-3000단어)</option>
+                                <option value="comprehensive">종합 (3000+단어)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 톤앤매너 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6 blog-card">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">
+                        <i class="fas fa-palette mr-2 text-purple-500"></i>톤앤매너
+                    </h3>
+                    <div class="tone-selector">
+                        <div class="tone-option" data-tone="professional">전문적</div>
+                        <div class="tone-option" data-tone="casual">캐주얼</div>
+                        <div class="tone-option" data-tone="friendly">친근함</div>
+                        <div class="tone-option" data-tone="humorous">유머러스</div>
+                        <div class="tone-option" data-tone="inspiring">영감주는</div>
+                        <div class="tone-option" data-tone="persuasive">설득력</div>
+                    </div>
+                </div>
+
+                <!-- SEO 옵션 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6 blog-card">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">
+                        <i class="fas fa-search mr-2 text-orange-500"></i>SEO 최적화
+                    </h3>
+                    <div class="space-y-3">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="seoOptimization" checked class="mr-2">
+                            <span>SEO 최적화 적용</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="metaDescription" checked class="mr-2">
+                            <span>메타 설명 생성</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="internalLinks" checked class="mr-2">
+                            <span>내부 링크 제안</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="callToAction" checked class="mr-2">
+                            <span>행동 유도 문구 포함</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 생성 버튼 -->
+                <button id="generateBtn" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-xl font-bold text-lg hover:shadow-xl transition">
+                    <i class="fas fa-magic mr-2"></i>블로그 콘텐츠 생성
+                </button>
+            </div>
+
+            <!-- 오른쪽 패널: 결과 -->
+            <div class="lg:col-span-2">
+                <!-- 탭 네비게이션 -->
+                <div class="bg-white rounded-xl shadow-lg p-2 mb-6">
+                    <div class="flex space-x-2">
+                        <button class="tab-btn tab-active flex-1 px-4 py-3 rounded-lg font-semibold transition" data-tab="outline">
+                            📋 개요
+                        </button>
+                        <button class="tab-btn flex-1 px-4 py-3 rounded-lg font-semibold bg-gray-100 hover:bg-gray-200 transition" data-tab="content">
+                            📝 콘텐츠
+                        </button>
+                        <button class="tab-btn flex-1 px-4 py-3 rounded-lg font-semibold bg-gray-100 hover:bg-gray-200 transition" data-tab="seo">
+                            🔍 SEO
+                        </button>
+                        <button class="tab-btn flex-1 px-4 py-3 rounded-lg font-semibold bg-gray-100 hover:bg-gray-200 transition" data-tab="export">
+                            💾 내보내기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 개요 탭 -->
+                <div id="outlineTab" class="tab-content">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-2xl font-bold text-gray-800">
+                                <i class="fas fa-list-ul mr-2 text-blue-500"></i>블로그 개요
+                            </h3>
+                            <div class="seo-score">
+                                SEO 점수: <span id="seoScore">0</span>/100
+                            </div>
+                        </div>
+
+                        <div id="outlineContent" class="space-y-4">
+                            <div class="text-gray-500 text-center py-12">
+                                <i class="fas fa-file-alt text-6xl mb-4"></i>
+                                <p class="text-lg">블로그 생성 버튼을 눌러 개요를 생성해보세요</p>
+                            </div>
+                        </div>
+
+                        <!-- 키워드 분석 -->
+                        <div id="keywordAnalysis" class="mt-8 p-6 bg-gray-50 rounded-lg hidden">
+                            <h4 class="font-bold text-lg mb-4">🔍 키워드 분석</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-white p-4 rounded-lg">
+                                    <div class="text-sm text-gray-600">메인 키워드 밀도</div>
+                                    <div class="text-xl font-bold text-green-600">2.3%</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-lg">
+                                    <div class="text-sm text-gray-600">총 키워드 수</div>
+                                    <div class="text-xl font-bold text-blue-600">15개</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 콘텐츠 탭 -->
+                <div id="contentTab" class="tab-content hidden">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-2xl font-bold text-gray-800">
+                                <i class="fas fa-file-text mr-2 text-green-500"></i>생성된 콘텐츠
+                            </h3>
+                            <div class="flex items-center space-x-3">
+                                <div class="reading-time">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    <span id="readingTime">5분</span> 읽기
+                                </div>
+                                <button id="copyContent" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
+                                    <i class="fas fa-copy mr-2"></i>복사
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="contentPreview" class="content-preview p-6 rounded-lg">
+                            <div class="text-gray-500 text-center py-12">
+                                <i class="fas fa-file-text text-6xl mb-4"></i>
+                                <p class="text-lg">콘텐츠가 생성되면 여기에 표시됩니다</p>
+                            </div>
+                        </div>
+
+                        <!-- 콘텐츠 통계 -->
+                        <div id="contentStats" class="mt-6 p-6 bg-gray-50 rounded-lg hidden">
+                            <h4 class="font-bold text-lg mb-4">📊 콘텐츠 통계</h4>
+                            <div class="grid grid-cols-4 gap-4">
+                                <div class="bg-white p-4 rounded-lg text-center">
+                                    <div class="text-2xl font-bold text-blue-600" id="wordCount">0</div>
+                                    <div class="text-sm text-gray-600">단어</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-lg text-center">
+                                    <div class="text-2xl font-bold text-green-600" id="paragraphCount">0</div>
+                                    <div class="text-sm text-gray-600">문단</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-lg text-center">
+                                    <div class="text-2xl font-bold text-purple-600" id="headingCount">0</div>
+                                    <div class="text-sm text-gray-600">제목</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-lg text-center">
+                                    <div class="text-2xl font-bold text-orange-600" id="characterCount">0</div>
+                                    <div class="text-sm text-gray-600">글자</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEO 탭 -->
+                <div id="seoTab" class="tab-content hidden">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                            <i class="fas fa-search mr-2 text-orange-500"></i>SEO 최적화
+                        </h3>
+
+                        <div class="space-y-6">
+                            <!-- 메타 태그 -->
+                            <div class="p-6 bg-gray-50 rounded-lg">
+                                <h4 class="font-bold text-lg mb-4">🏷️ 메타 태그</h4>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">메타 제목</label>
+                                        <input
+                                            type="text"
+                                            id="metaTitle"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                                            readonly
+                                            placeholder="생성된 메타 제목"
+                                        >
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">메타 설명</label>
+                                        <textarea
+                                            id="metaDescription"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                                            rows="3"
+                                            readonly
+                                            placeholder="생성된 메타 설명"
+                                        ></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 키워드 제안 -->
+                            <div class="p-6 bg-gray-50 rounded-lg">
+                                <h4 class="font-bold text-lg mb-4">🔤 추천 키워드</h4>
+                                <div id="suggestedKeywords" class="flex flex-wrap">
+                                    <span class="keyword-tag">추천 키워드가 여기에 표시됩니다</span>
+                                </div>
+                            </div>
+
+                            <!-- 내부 링크 제안 -->
+                            <div class="p-6 bg-gray-50 rounded-lg">
+                                <h4 class="font-bold text-lg mb-4">🔗 내부 링크 제안</h4>
+                                <div id="internalLinks" class="space-y-2">
+                                    <p class="text-gray-600">관련 내부 링크 제안이 여기에 표시됩니다</p>
+                                </div>
+                            </div>
+
+                            <!-- SEO 체크리스트 -->
+                            <div class="p-6 bg-gray-50 rounded-lg">
+                                <h4 class="font-bold text-lg mb-4">✅ SEO 체크리스트</h4>
+                                <div id="seoChecklist" class="space-y-3">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                        <span>제목에 메인 키워드 포함</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                        <span>적절한 키워드 밀도 유지</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                        <span>메타 설명 최적화</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 내보내기 탭 -->
+                <div id="exportTab" class="tab-content hidden">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                            <i class="fas fa-download mr-2 text-purple-500"></i>내보내기
+                        </h3>
+
+                        <div class="grid grid-cols-2 gap-6">
+                            <!-- 포맷 선택 -->
+                            <div>
+                                <h4 class="font-bold text-lg mb-4">📄 포맷 선택</h4>
+                                <div class="space-y-3">
+                                    <div class="export-option" data-format="markdown">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-code text-blue-500 mr-3"></i>
+                                            <div>
+                                                <div class="font-semibold">Markdown</div>
+                                                <div class="text-sm text-gray-600">GitHub, Notion 호환</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="export-option" data-format="html">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-globe text-green-500 mr-3"></i>
+                                            <div>
+                                                <div class="font-semibold">HTML</div>
+                                                <div class="text-sm text-gray-600">웹사이트 바로 사용</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="export-option" data-format="pdf">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-file-pdf text-red-500 mr-3"></i>
+                                            <div>
+                                                <div class="font-semibold">PDF</div>
+                                                <div class="text-sm text-gray-600">문서 공유용</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="export-option" data-format="docx">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-file-word text-blue-600 mr-3"></i>
+                                            <div>
+                                                <div class="font-semibold">Word</div>
+                                                <div class="text-sm text-gray-600">MS Word 호환</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 플랫폼 공유 -->
+                            <div>
+                                <h4 class="font-bold text-lg mb-4">🚀 플랫폼 바로 공유</h4>
+                                <div class="space-y-3">
+                                    <div class="export-option" data-platform="medium">
+                                        <div class="flex items-center">
+                                            <i class="fab fa-medium text-gray-800 mr-3"></i>
+                                            <div>
+                                                <div class="font-semibold">Medium</div>
+                                                <div class="text-sm text-gray-600">바로 발행하기</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="export-option" data-platform="wordpress">
+                                        <div class="flex items-center">
+                                            <i class="fab fa-wordpress text-blue-500 mr-3"></i>
+                                            <div>
+                                                <div class="font-semibold">WordPress</div>
+                                                <div class="text-sm text-gray-600">워드프레스 연동</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="export-option" data-platform="notion">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-sticky-note text-purple-500 mr-3"></i>
+                                            <div>
+                                                <div class="font-semibold">Notion</div>
+                                                <div class="text-sm text-gray-600">노션으로 가져오기</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 내보내기 버튼 -->
+                        <div class="mt-8 text-center">
+                            <button id="exportBtn" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-3 rounded-xl font-bold text-lg hover:shadow-xl transition disabled:opacity-50" disabled>
+                                <i class="fas fa-download mr-2"></i>선택된 포맷으로 내보내기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 네비게이션 로드 스크립트 -->
+    <script src="script.js"></script>
+
+    <script>
+        // 상태 관리
+        const blogState = {
+            template: '',
+            mainKeyword: '',
+            relatedKeywords: [],
+            tone: '',
+            targetAudience: '',
+            contentLength: '',
+            outline: [],
+            content: '',
+            seoData: {},
+            selectedFormat: '',
+            isGenerating: false
+        };
+
+        // DOM 요소
+        const elements = {
+            mainKeyword: document.getElementById('mainKeyword'),
+            relatedKeywords: document.getElementById('relatedKeywords'),
+            targetAudience: document.getElementById('targetAudience'),
+            contentLength: document.getElementById('contentLength'),
+            generateBtn: document.getElementById('generateBtn'),
+            outlineContent: document.getElementById('outlineContent'),
+            contentPreview: document.getElementById('contentPreview'),
+            contentStats: document.getElementById('contentStats'),
+            seoScore: document.getElementById('seoScore'),
+            keywordAnalysis: document.getElementById('keywordAnalysis'),
+            metaTitle: document.getElementById('metaTitle'),
+            metaDescription: document.getElementById('metaDescription'),
+            suggestedKeywords: document.getElementById('suggestedKeywords'),
+            internalLinks: document.getElementById('internalLinks'),
+            seoChecklist: document.getElementById('seoChecklist'),
+            copyContent: document.getElementById('copyContent'),
+            exportBtn: document.getElementById('exportBtn'),
+            readingTime: document.getElementById('readingTime'),
+            wordCount: document.getElementById('wordCount'),
+            paragraphCount: document.getElementById('paragraphCount'),
+            headingCount: document.getElementById('headingCount'),
+            characterCount: document.getElementById('characterCount')
+        };
+
+        // 템플릿 선택
+        document.querySelectorAll('.template-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                blogState.template = card.dataset.template;
+            });
+        });
+
+        // 톤 선택
+        document.querySelectorAll('.tone-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.tone-option').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                blogState.tone = option.dataset.tone;
+            });
+        });
+
+        // 탭 전환
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetTab = btn.dataset.tab;
+
+                // 탭 버튼 활성화
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('tab-active');
+                    b.classList.add('bg-gray-100', 'hover:bg-gray-200');
+                });
+                btn.classList.add('tab-active');
+                btn.classList.remove('bg-gray-100', 'hover:bg-gray-200');
+
+                // 콘텐츠 표시/숨김
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                document.getElementById(`${targetTab}Tab`).classList.remove('hidden');
+            });
+        });
+
+        // 블로그 콘텐츠 생성
+        async function generateBlog() {
+            if (blogState.isGenerating) return;
+
+            // 입력 검증
+            blogState.mainKeyword = elements.mainKeyword.value.trim();
+            if (!blogState.mainKeyword) {
+                alert('메인 키워드를 입력해주세요.');
+                return;
+            }
+
+            if (!blogState.template) {
+                alert('블로그 템플릿을 선택해주세요.');
+                return;
+            }
+
+            blogState.isGenerating = true;
+            elements.generateBtn.classList.add('generating');
+            elements.generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>생성 중...';
+
+            try {
+                // 입력값 저장
+                blogState.relatedKeywords = elements.relatedKeywords.value.split(',').map(k => k.trim()).filter(k => k);
+                blogState.targetAudience = elements.targetAudience.value;
+                blogState.contentLength = elements.contentLength.value;
+
+                // 개요 생성
+                await generateOutline();
+
+                // 콘텐츠 생성
+                await generateContent();
+
+                // SEO 데이터 생성
+                await generateSEOData();
+
+                // 통계 계산
+                calculateContentStats();
+
+                // 결과 표시
+                showResults();
+
+            } catch (error) {
+                console.error('생성 오류:', error);
+                alert('생성 중 오류가 발생했습니다.');
+            } finally {
+                blogState.isGenerating = false;
+                elements.generateBtn.classList.remove('generating');
+                elements.generateBtn.innerHTML = '<i class="fas fa-magic mr-2"></i>블로그 콘텐츠 생성';
+            }
+        }
+
+        // 개요 생성
+        async function generateOutline() {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            const outlineTemplates = {
+                howto: [
+                    { title: '서론: 문제 제기', description: '독자가 공감할 만한 문제 상황 설명' },
+                    { title: '해결책 소개', description: '이 글에서 다룰 해결책 간략 소개' },
+                    { title: '준비물 목록', description: '필요한 도구나 재료 정리' },
+                    { title: '단계별 가이드', description: '상세한 실행 단계별 설명' },
+                    { title: '주의사항', description: '실천 시 주의할 점들' },
+                    { title: '결론: 기대효과', description: '예상되는 결과와 장점' }
+                ],
+                listicle: [
+                    { title: '흥미로운 서론', description: '독자의 호기심을 자극하는 도입부' },
+                    { title: '리스트 항목 1-3', description: '가장 중요한 항목들' },
+                    { title: '리스트 항목 4-7', description: '보조적인 항목들' },
+                    { title: '리스트 항목 8-10', description: '추가적인 항목들' },
+                    { title: '심층 분석', description: '각 항목의 상세 분석' },
+                    { title: '마무리 및 정리', description: '전체 내용 요약' }
+                ],
+                review: [
+                    { title: '제품/서비스 소개', description: '리뷰할 대상에 대한 기본 정보' },
+                    { title: '주요 특징', description: '가장 중요한 특징들 설명' },
+                    { title: '장점 분석', description: '긍정적인 측면 상세 분석' },
+                    { title: '단점 분석', description: '단점이나 개선점 객관적 분석' },
+                    { title: '경험 공유', description: '실제 사용 경험分享' },
+                    { title: '총평 및 추천', description: '종합적인 평가와 추천 여부' }
+                ],
+                comparison: [
+                    { title: '비교 대상 소개', description: '비교할 두 가지 옵션 소개' },
+                    { title: '가격 비교', description: '가격 및 비용 효율성 분석' },
+                    { title: '성능 비교', description: '주요 성능 지표 비교' },
+                    { title: '사용성 비교', description: '사용 편의성 및 인터페이스' },
+                    { title: '장단점 정리', description: '각각의 장단점 정리' },
+                    { title: '최종 추천', description: '상황에 맞는 추천' }
+                ]
+            };
+
+            blogState.outline = outlineTemplates[blogState.template] || outlineTemplates.howto;
+
+            elements.outlineContent.innerHTML = blogState.outline.map((item, index) => `
+                <div class="outline-item fade-in" style="animation-delay: ${index * 0.1}s">
+                    <div class="flex items-start">
+                        <div class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 mt-1">
+                            ${index + 1}
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-lg mb-2">${item.title}</h4>
+                            <p class="text-gray-600 text-sm">${item.description}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 콘텐츠 생성
+        async function generateContent() {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            const sampleContent = `
+# ${blogState.mainKeyword}에 대한 완벽한 가이드
+
+## 서론: 왜 ${blogState.mainKeyword}가 중요한가?
+
+현대 사회에서 ${blogState.mainKeyword}는 단순한 선택이 아닌 필수적인 요소가 되었습니다. 많은 사람들이 이 분야에서 어려움을 겪고 있으며, 올바른 방향을 제시하는 것이 중요합니다.
+
+## 준비물 및 전제 조건
+
+${blogState.mainKeyword}를 시작하기 전에 다음과 같은 준비가 필요합니다:
+
+- **기본 도구**: 필수적인 장비와 소프트웨어
+- **마음가짐**: 꾸준함과 인내심
+- **시간 관리**: 규칙적인 실습 시간 확보
+
+## 단계별 상세 가이드
+
+### 1단계: 기초 다지기
+
+가장 먼저 기본 개념을 이해하는 것이 중요합니다. ${blogState.mainKeyword}의 핵심 원리를 파악하고, 관련된 기초 지식을 쌓아야 합니다.
+
+### 2단계: 실전 적용
+
+이론을 실제에 적용해보는 단계입니다. 작은 성공 경험을 쌓으면서 자신감을 얻는 것이 중요합니다.
+
+### 3단계: 전문가 수준
+
+지속적인 연습과 학습을 통해 전문가 수준에 도달할 수 있습니다. ${blogState.relatedKeywords.join(', ')} 등 관련 분야도 함께 학습하면 좋습니다.
+
+## 주의사항 및 팁
+
+- **꾸준함이 중요**: 하루아침에 결과가 나오지 않습니다
+- **올바른 방법**: 잘못된 방법은 오히려 해가 될 수 있습니다
+- **커뮤니티 활용**: 다른 사람들과의 교류는 큰 도움이 됩니다
+
+## 결론: 기대 효과
+
+이 가이드를 따르면 ${blogState.mainKeyword} 분야에서 눈에 띄는 성과를 얻을 수 있을 것입니다. 꾸준한 노력과 올바른 방법이 성공의 열쇠입니다.
+
+---
+
+## 추가 자료
+
+더 많은 정보를 원하시면 관련 서적이나 온라인 강의를 참고하시는 것을 추천합니다. 질문이 있으시면 댓글로 남겨주세요!
+            `;
+
+            blogState.content = sampleContent;
+            elements.contentPreview.innerHTML = `<div class="prose max-w-none">${sampleContent.replace(/\n/g, '<br>')}</div>`;
+        }
+
+        // SEO 데이터 생성
+        async function generateSEOData() {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            const seoScore = 75 + Math.floor(Math.random() * 20);
+            elements.seoScore.textContent = seoScore;
+
+            // 메타 데이터
+            elements.metaTitle.value = `${blogState.mainKeyword}: 완벽한 가이드 2024 | 전문가 조언`;
+            elements.metaDescription.value = `${blogState.mainKeyword}에 대한 모든 것을 알려드립니다. 초보자도 쉽게 따라할 수 있는 상세 가이드와 전문가 팁!`;
+
+            // 추천 키워드
+            const suggestedKeywords = [
+                blogState.mainKeyword,
+                ...blogState.relatedKeywords,
+                `${blogState.mainKeyword} 방법`,
+                `${blogState.mainKeyword} 가이드`,
+                `${blogState.mainKeyword} 팁`,
+                '초보자',
+                '전문가',
+                '성공 사례'
+            ];
+
+            elements.suggestedKeywords.innerHTML = suggestedKeywords
+                .map(keyword => `<span class="keyword-tag">${keyword}</span>`)
+                .join('');
+
+            // 내부 링크
+            elements.internalLinks.innerHTML = `
+                <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                    <div>
+                        <div class="font-semibold">관련 가이드: ${blogState.relatedKeywords[0] || '추가 정보'}</div>
+                        <div class="text-sm text-gray-600">더 자세한 정보가 필요하신 분들께 추천</div>
+                    </div>
+                    <i class="fas fa-arrow-right text-blue-500"></i>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                    <div>
+                        <div class="font-semibold">성공 사례 모음</div>
+                        <div class="text-sm text-gray-600">실제 성공한 분들의 경험담</div>
+                    </div>
+                    <i class="fas fa-arrow-right text-blue-500"></i>
+                </div>
+            `;
+
+            // SEO 체크리스트
+            const checklistItems = [
+                { icon: 'check-circle', text: '제목에 메인 키워드 포함', checked: true },
+                { icon: 'check-circle', text: '적절한 키워드 밀도 유지', checked: true },
+                { icon: 'check-circle', text: '메타 설명 최적화', checked: true },
+                { icon: 'check-circle', text: '제목 태그(H1-H6) 적절한 사용', checked: true },
+                { icon: 'check-circle', text: '내부 링크 포함', checked: true },
+                { icon: 'check-circle', text: '이미지 alt 태그 최적화', checked: false },
+                { icon: 'times-circle', text: '외부 링크 추가 필요', checked: false }
+            ];
+
+            elements.seoChecklist.innerHTML = checklistItems.map(item => `
+                <div class="flex items-center">
+                    <i class="fas fa-${item.icon} ${item.checked ? 'text-green-500' : 'text-red-500'} mr-2"></i>
+                    <span>${item.text}</span>
+                </div>
+            `).join('');
+
+            // 키워드 분석 표시
+            elements.keywordAnalysis.classList.remove('hidden');
+        }
+
+        // 콘텐츠 통계 계산
+        function calculateContentStats() {
+            const words = blogState.content.split(/\s+/).length;
+            const paragraphs = blogState.content.split(/\n\n+/).length;
+            const headings = (blogState.content.match(/^#+\s/gm) || []).length;
+            const characters = blogState.content.length;
+
+            elements.wordCount.textContent = words;
+            elements.paragraphCount.textContent = paragraphs;
+            elements.headingCount.textContent = headings;
+            elements.characterCount.textContent = characters;
+
+            // 읽기 시간 계산 (분당 200단어 기준)
+            const readingTime = Math.ceil(words / 200);
+            elements.readingTime.textContent = `${readingTime}분`;
+
+            elements.contentStats.classList.remove('hidden');
+        }
+
+        // 결과 표시
+        function showResults() {
+            // 모든 탭 활성화
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.disabled = false;
+            });
+        }
+
+        // 콘텐츠 복사
+        elements.copyContent.addEventListener('click', () => {
+            navigator.clipboard.writeText(blogState.content).then(() => {
+                const originalText = elements.copyContent.innerHTML;
+                elements.copyContent.innerHTML = '<i class="fas fa-check mr-2"></i>복사됨!';
+                elements.copyContent.classList.add('bg-green-600');
+                setTimeout(() => {
+                    elements.copyContent.innerHTML = originalText;
+                    elements.copyContent.classList.remove('bg-green-600');
+                }, 2000);
+            });
+        });
+
+        // 내보내기 옵션 선택
+        document.querySelectorAll('.export-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.export-option').forEach(o => {
+                    o.style.borderColor = '#e2e8f0';
+                    o.style.background = 'white';
+                });
+                option.style.borderColor = '#4299e1';
+                option.style.background = '#ebf8ff';
+
+                if (option.dataset.format) {
+                    blogState.selectedFormat = option.dataset.format;
+                    elements.exportBtn.disabled = false;
+                }
+            });
+        });
+
+        // 내보내기 기능
+        elements.exportBtn.addEventListener('click', () => {
+            if (!blogState.selectedFormat) {
+                alert('내보낼 포맷을 선택해주세요.');
+                return;
+            }
+
+            // 실제 내보내기 로직
+            console.log(`${blogState.selectedFormat} 포맷으로 내보내기`);
+            alert(`${blogState.selectedFormat.toUpperCase()} 파일이 생성되었습니다.`);
+        });
+
+        // 생성 버튼 이벤트
+        elements.generateBtn.addEventListener('click', generateBlog);
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            // 기본 템플릿 선택
+            document.querySelector('.template-card').click();
+            // 기본 톤 선택
+            document.querySelector('.tone-option').click();
+        });
+    </script>
+</body>
+</html>

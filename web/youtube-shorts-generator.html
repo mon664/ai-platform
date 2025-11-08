@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 유튜브 쇼츠 생성기 - 전문가 도구</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .script-container {
+            background: #f8fafc;
+            border-left: 4px solid #4299e1;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .scene-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+
+        .scene-card:hover {
+            border-color: #4299e1;
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.1);
+        }
+
+        .timeline {
+            background: #e2e8f0;
+            height: 60px;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .timeline-segment {
+            position: absolute;
+            height: 100%;
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: #4299e1;
+            background: #ebf8ff;
+        }
+
+        .trend-badge {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .hook-indicator {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #92400e;
+            font-weight: bold;
+        }
+
+        .cta-indicator {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #065f46;
+            font-weight: bold;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .generating {
+            animation: pulse 1.5s infinite;
+        }
+
+        .tab-active {
+            background: #4299e1 !important;
+            color: white !important;
+        }
+
+        .viral-score {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 통합 네비게이션 로드 -->
+    <div id="navigation-container"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 헤더 -->
+        <div class="gradient-bg rounded-xl shadow-xl p-8 mb-8 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold mb-3">🎬 유튜브 쇼츠 생성기</h1>
+                    <p class="text-xl opacity-90">바이럴 쇼츠를 위한 전문가 수준의 스크립트와 전략 생성</p>
+                </div>
+                <div class="text-center">
+                    <div class="text-5xl mb-2">🔥</div>
+                    <div class="text-lg font-bold">TRENDING</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 왼쪽 패널: 입력 -->
+            <div class="lg:col-span-1">
+                <!-- 카테고리 선택 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6 card-hover">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">
+                        <i class="fas fa-folder-open mr-2 text-blue-500"></i>쇼츠 카테고리
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button class="category-btn bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-3 rounded-lg hover:shadow-lg transition" data-category="entertainment">
+                            🎬 엔터테인먼트
+                        </button>
+                        <button class="category-btn bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-3 rounded-lg hover:shadow-lg transition" data-category="education">
+                            📚 교육/정보
+                        </button>
+                        <button class="category-btn bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-3 rounded-lg hover:shadow-lg transition" data-category="lifestyle">
+                            🌱 라이프스타일
+                        </button>
+                        <button class="category-btn bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-3 rounded-lg hover:shadow-lg transition" data-category="food">
+                            🍔 음식
+                        </button>
+                        <button class="category-btn bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-3 rounded-lg hover:shadow-lg transition" data-category="tech">
+                            💻 테크/가젯
+                        </button>
+                        <button class="category-btn bg-gradient-to-r from-pink-500 to-rose-500 text-white px-4 py-3 rounded-lg hover:shadow-lg transition" data-category="beauty">
+                            💄 뷰티/패션
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 키워드 입력 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6 card-hover">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">
+                        <i class="fas fa-keyboard mr-2 text-green-500"></i>핵심 키워드
+                    </h3>
+                    <input
+                        type="text"
+                        id="keywordsInput"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="예: 다이어트, 운동, 건강"
+                    >
+                    <div class="mt-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">실시간 트렌드 키워드</label>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="trend-keyword bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm cursor-pointer hover:bg-blue-100 hover:text-blue-700">#요리레시피</span>
+                            <span class="trend-keyword bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm cursor-pointer hover:bg-blue-100 hover:text-blue-700">#운동루틴</span>
+                            <span class="trend-keyword bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm cursor-pointer hover:bg-blue-100 hover:text-blue-700">#재테크</span>
+                            <span class="trend-keyword bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm cursor-pointer hover:bg-blue-100 hover:text-blue-700">#자기계발</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 옵션 설정 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6 card-hover">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">
+                        <i class="fas fa-cog mr-2 text-purple-500"></i>생성 옵션
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">타겟 시청자</label>
+                            <select id="targetAudience" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="teens">10대 (청소년)</option>
+                                <option value="20s">20대 (청년)</option>
+                                <option value="30s">30대 (성인)</option>
+                                <option value="40s">40대 이상</option>
+                                <option value="all">모든 연령</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">쇼츠 길이</label>
+                            <select id="duration" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="15">15초 (초단)</option>
+                                <option value="30">30초 (표준)</option>
+                                <option value="45">45초 (중간)</option>
+                                <option value="60">60초 (긴)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">톤앤매너</label>
+                            <select id="tone" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="funny">유머러스함</option>
+                                <option value="serious">진지함</option>
+                                <option value="educational">교육적</option>
+                                <option value="inspiring">영감주는</option>
+                                <option value="dramatic">드라마틱</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 생성 버튼 -->
+                <button id="generateBtn" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-xl font-bold text-lg hover:shadow-xl transition">
+                    <i class="fas fa-magic mr-2"></i>쇼츠 생성하기
+                </button>
+            </div>
+
+            <!-- 중앙 패널: 결과 -->
+            <div class="lg:col-span-2">
+                <!-- 탭 네비게이션 -->
+                <div class="bg-white rounded-xl shadow-lg p-2 mb-6">
+                    <div class="flex space-x-2">
+                        <button class="tab-btn tab-active flex-1 px-4 py-3 rounded-lg font-semibold transition" data-tab="script">
+                            📝 스크립트
+                        </button>
+                        <button class="tab-btn flex-1 px-4 py-3 rounded-lg font-semibold bg-gray-100 hover:bg-gray-200 transition" data-tab="scenes">
+                            🎬 장면 구성
+                        </button>
+                        <button class="tab-btn flex-1 px-4 py-3 rounded-lg font-semibold bg-gray-100 hover:bg-gray-200 transition" data-tab="timeline">
+                            ⏱️ 타임라인
+                        </button>
+                        <button class="tab-btn flex-1 px-4 py-3 rounded-lg font-semibold bg-gray-100 hover:bg-gray-200 transition" data-tab="assets">
+                            🎨 자료
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 스크립트 탭 -->
+                <div id="scriptTab" class="tab-content">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-2xl font-bold text-gray-800">
+                                <i class="fas fa-file-alt mr-2 text-blue-500"></i>쇼츠 스크립트
+                            </h3>
+                            <div class="flex items-center space-x-3">
+                                <div class="viral-score">
+                                    🔥 바이럴 점수: <span id="viralScore">0</span>/100
+                                </div>
+                                <button id="copyScript" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
+                                    <i class="fas fa-copy mr-2"></i>복사
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="scriptContent" class="script-container p-6 rounded-lg">
+                            <div class="text-gray-500 text-center py-8">
+                                <i class="fas fa-magic text-6xl mb-4"></i>
+                                <p>쇼츠 생성 버튼을 눌러 스크립트를 생성해보세요</p>
+                            </div>
+                        </div>
+
+                        <!-- 스크립트 분석 -->
+                        <div id="scriptAnalysis" class="mt-6 p-6 bg-gray-50 rounded-lg hidden">
+                            <h4 class="font-bold text-lg mb-4">📊 스크립트 분석</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-white p-4 rounded-lg">
+                                    <div class="text-sm text-gray-600">예상 시청 지속 시간</div>
+                                    <div class="text-2xl font-bold text-green-600">45초</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-lg">
+                                    <div class="text-sm text-gray-600">예상 참여도</div>
+                                    <div class="text-2xl font-bold text-blue-600">85%</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-lg">
+                                    <div class="text-sm text-gray-600">후크 강도</div>
+                                    <div class="text-2xl font-bold text-purple-600">강함</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-lg">
+                                    <div class="text-sm text-gray-600">공유 가능성</div>
+                                    <div class="text-2xl font-bold text-red-600">높음</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 장면 구성 탭 -->
+                <div id="scenesTab" class="tab-content hidden">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                            <i class="fas fa-film mr-2 text-purple-500"></i>장면 구성
+                        </h3>
+                        <div id="scenesContent">
+                            <div class="text-gray-500 text-center py-8">
+                                <i class="fas fa-film text-6xl mb-4"></i>
+                                <p>스크립트를 먼저 생성해주세요</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 타임라인 탭 -->
+                <div id="timelineTab" class="tab-content hidden">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                            <i class="fas fa-clock mr-2 text-green-500"></i>타임라인
+                        </h3>
+                        <div id="timelineContent">
+                            <div class="timeline mb-4">
+                                <div class="flex items-center justify-center h-full text-gray-500">
+                                    <i class="fas fa-clock text-4xl mr-3"></i>
+                                    타임라인을 생성해주세요
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 자료 탭 -->
+                <div id="assetsTab" class="tab-content hidden">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                            <i class="fas fa-images mr-2 text-orange-500"></i>추천 자료
+                        </h3>
+
+                        <!-- 배경음악 -->
+                        <div class="mb-8">
+                            <h4 class="font-bold text-lg mb-4">🎵 배경음악 추천</h4>
+                            <div id="musicSuggestions" class="grid grid-cols-2 gap-4">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-music text-blue-500 mr-2"></i>
+                                        <span class="font-semibold">Upbeat Pop</span>
+                                    </div>
+                                    <div class="text-sm text-gray-600">에너지틱하고 활기찬 분위기</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 이미지/비디오 -->
+                        <div class="mb-8">
+                            <h4 class="font-bold text-lg mb-4">🖼️ 시각 자료</h4>
+                            <div class="upload-area">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                                <p class="text-gray-600 font-semibold">자료 업로드</p>
+                                <p class="text-sm text-gray-500">이미지나 비디오를 드래그하여 업로드하세요</p>
+                                <input type="file" id="assetUpload" multiple accept="image/*,video/*" class="hidden">
+                            </div>
+                        </div>
+
+                        <!-- 효과음 -->
+                        <div>
+                            <h4 class="font-bold text-lg mb-4">🔊 효과음</h4>
+                            <div class="grid grid-cols-3 gap-3">
+                                <button class="bg-gray-100 hover:bg-gray-200 p-3 rounded-lg transition">
+                                    <i class="fas fa-bell text-yellow-500 mr-2"></i>알림음
+                                </button>
+                                <button class="bg-gray-100 hover:bg-gray-200 p-3 rounded-lg transition">
+                                    <i class="fas fa-drum text-red-500 mr-2"></i>드럼
+                                </button>
+                                <button class="bg-gray-100 hover:bg-gray-200 p-3 rounded-lg transition">
+                                    <i class="fas fa-bolt text-purple-500 mr-2"></i>번쩍임
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 네비게이션 로드 스크립트 -->
+    <script src="script.js"></script>
+
+    <script>
+        // 상태 관리
+        const state = {
+            category: '',
+            keywords: [],
+            script: '',
+            scenes: [],
+            assets: {
+                music: [],
+                images: [],
+                effects: []
+            },
+            isGenerating: false
+        };
+
+        // DOM 요소
+        const elements = {
+            keywordsInput: document.getElementById('keywordsInput'),
+            targetAudience: document.getElementById('targetAudience'),
+            duration: document.getElementById('duration'),
+            tone: document.getElementById('tone'),
+            generateBtn: document.getElementById('generateBtn'),
+            scriptContent: document.getElementById('scriptContent'),
+            scriptAnalysis: document.getElementById('scriptAnalysis'),
+            viralScore: document.getElementById('viralScore'),
+            copyScript: document.getElementById('copyScript'),
+            scenesContent: document.getElementById('scenesContent'),
+            timelineContent: document.getElementById('timelineContent'),
+            musicSuggestions: document.getElementById('musicSuggestions'),
+            assetUpload: document.getElementById('assetUpload')
+        };
+
+        // 카테고리 버튼 이벤트
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.category-btn').forEach(b => {
+                    b.classList.remove('ring-4', 'ring-white', 'ring-opacity-50');
+                });
+                btn.classList.add('ring-4', 'ring-white', 'ring-opacity-50');
+                state.category = btn.dataset.category;
+            });
+        });
+
+        // 트렌드 키워드 클릭
+        document.querySelectorAll('.trend-keyword').forEach(keyword => {
+            keyword.addEventListener('click', () => {
+                const currentKeywords = elements.keywordsInput.value;
+                const newKeyword = keyword.textContent;
+                if (!currentKeywords.includes(newKeyword)) {
+                    elements.keywordsInput.value = currentKeywords ?
+                        `${currentKeywords}, ${newKeyword}` : newKeyword;
+                }
+            });
+        });
+
+        // 탭 전환
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetTab = btn.dataset.tab;
+
+                // 탭 버튼 활성화
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('tab-active');
+                    b.classList.add('bg-gray-100', 'hover:bg-gray-200');
+                });
+                btn.classList.add('tab-active');
+                btn.classList.remove('bg-gray-100', 'hover:bg-gray-200');
+
+                // 콘텐츠 표시/숨김
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                document.getElementById(`${targetTab}Tab`).classList.remove('hidden');
+            });
+        });
+
+        // 쇼츠 생성 함수
+        async function generateShorts() {
+            if (state.isGenerating) return;
+
+            const keywords = elements.keywordsInput.value.trim();
+            if (!keywords && !state.category) {
+                alert('키워드나 카테고리를 선택해주세요.');
+                return;
+            }
+
+            state.isGenerating = true;
+            elements.generateBtn.classList.add('generating');
+            elements.generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>생성 중...';
+
+            try {
+                // 스크립트 생성
+                await generateScript();
+
+                // 장면 생성
+                await generateScenes();
+
+                // 타임라인 생성
+                generateTimeline();
+
+                // 자료 추천
+                recommendAssets();
+
+                // 분석 표시
+                elements.scriptAnalysis.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('생성 오류:', error);
+                alert('생성 중 오류가 발생했습니다.');
+            } finally {
+                state.isGenerating = false;
+                elements.generateBtn.classList.remove('generating');
+                elements.generateBtn.innerHTML = '<i class="fas fa-magic mr-2"></i>쇼츠 생성하기';
+            }
+        }
+
+        // 스크립트 생성
+        async function generateScript() {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            const hooks = [
+                "잠깐만요! 이거 알아요?",
+                "3초 안에 끝나는 이 사실!",
+                "절대 놓치지 마세요!",
+                "오늘부터 당신도 이렇게!",
+                "이거 보고 놀라지 마세요!"
+            ];
+
+            const mainContents = [
+                "오늘은 여러분께 정말 놀라운 방법을 알려드릴 거예요. 많은 분들이 모르고 지나치는 이 방법은...",
+                "여기 계신 여러분! 혹시 이런 경험 있으신가요? 항상 똑같은 결과만 나와서 답답할 때...",
+                "준비되셨나요? 오늘부터 여러분의 인생이 완전히 바뀔 수 있는 이 비밀을 공개합니다...",
+                "전문가들이 절대 알려주지 않는 이 방법! 이제는 여러분도 배울 수 있습니다..."
+            ];
+
+            const ctas = [
+                "지금 바로 구독하고 알림 설정을 눌러주세요!",
+                "여러분의 경험을 댓글로 알려주세요!",
+                "친구에게도 공유해서 같이 성장해요!",
+                "다음 영상에서 더 놀라운 팁을 알려드릴게요!"
+            ];
+
+            const selectedHook = hooks[Math.floor(Math.random() * hooks.length)];
+            const selectedMain = mainContents[Math.floor(Math.random() * mainContents.length)];
+            const selectedCta = ctas[Math.floor(Math.random() * ctas.length)];
+
+            state.script = `
+<div class="space-y-4">
+    <div class="hook-indicator">
+        <i class="fas fa-hook mr-2"></i><strong>후크 (0-3초)</strong>
+    </div>
+    <p class="text-lg font-semibold">${selectedHook}</p>
+
+    <div class="mt-6">
+        <strong class="text-gray-700">본문 (4-45초)</strong>
+    </div>
+    <p class="leading-relaxed">${selectedMain}</p>
+
+    <div class="mt-6">
+        <div class="cta-indicator">
+            <i class="fas fa-bullhorn mr-2"></i><strong>CTA (46-60초)</strong>
+        </div>
+    </div>
+    <p class="text-lg font-semibold">${selectedCta}</p>
+</div>
+            `;
+
+            elements.scriptContent.innerHTML = state.script;
+
+            // 바이럴 점수 계산
+            const viralScore = 70 + Math.floor(Math.random() * 25);
+            elements.viralScore.textContent = viralScore;
+        }
+
+        // 장면 생성
+        async function generateScenes() {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            const scenes = [
+                {
+                    title: "오프닝",
+                    duration: "0-3초",
+                    description: "강렬한 비주얼과 함께 시청자의 시선을 사로잡는 오프닝",
+                    type: "hook",
+                    visual: "빠른 컷, 강렬한 색감, 인물의 표정 클로즈업"
+                },
+                {
+                    title: "문제 제기",
+                    duration: "4-15초",
+                    description: "시청자가 공감할 만한 문제나 궁금증 제시",
+                    type: "problem",
+                    visual: "일상적인 장면, 문제 상황 연출"
+                },
+                {
+                    title: "해결책 제시",
+                    duration: "16-45초",
+                    description: "핵심 정보나 해결책을 명확하게 전달",
+                    type: "solution",
+                    visual: "정보 그래픽, 데모, 실제 적용 모습"
+                },
+                {
+                    title: "클로징",
+                    duration: "46-60초",
+                    description: "요약과 행동 촉구",
+                    type: "cta",
+                    visual: "구독 버튼, 알림 설정 화면, 친구 공유"
+                }
+            ];
+
+            state.scenes = scenes;
+
+            elements.scenesContent.innerHTML = scenes.map((scene, index) => `
+                <div class="scene-card">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-lg">${scene.title}</h4>
+                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">${scene.duration}</span>
+                    </div>
+                    <p class="text-gray-700 mb-2">${scene.description}</p>
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <span class="text-sm font-semibold text-gray-600">시각적 표현:</span>
+                        <p class="text-sm text-gray-700 mt-1">${scene.visual}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 타임라인 생성
+        function generateTimeline() {
+            const timelineSegments = [
+                { start: 0, width: 5, label: "Hook", color: "#ef4444" },
+                { start: 5, width: 20, label: "Problem", color: "#f59e0b" },
+                { start: 25, width: 55, label: "Solution", color: "#10b981" },
+                { start: 80, width: 20, label: "CTA", color: "#3b82f6" }
+            ];
+
+            elements.timelineContent.innerHTML = `
+                <div class="timeline relative">
+                    ${timelineSegments.map(segment => `
+                        <div class="timeline-segment" style="left: ${segment.start}%; width: ${segment.width}%; background: ${segment.color};">
+                            ${segment.label}
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="mt-4 grid grid-cols-4 gap-2">
+                    ${timelineSegments.map(segment => `
+                        <div class="text-center">
+                            <div class="w-4 h-4 mx-auto mb-2 rounded-full" style="background: ${segment.color};"></div>
+                            <div class="text-xs font-semibold">${segment.label}</div>
+                            <div class="text-xs text-gray-600">${segment.start}-${segment.start + segment.width}%</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // 자료 추천
+        function recommendAssets() {
+            const musicSuggestions = [
+                { title: "Upbeat Pop", mood: "에너지틱", tempo: "빠름" },
+                { title: "Trending Beats", mood: "트렌디", tempo: "중간" },
+                { title: "Background Lo-fi", mood: "차분", tempo: "느림" },
+                { title: "Epic Cinematic", mood: "웅장", tempo: "다양" }
+            ];
+
+            elements.musicSuggestions.innerHTML = musicSuggestions.map(music => `
+                <div class="bg-gray-50 p-4 rounded-lg hover:bg-gray-100 cursor-pointer transition">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-music text-blue-500 mr-2"></i>
+                        <span class="font-semibold">${music.title}</span>
+                    </div>
+                    <div class="text-sm text-gray-600">
+                        <span class="mr-3">분위기: ${music.mood}</span>
+                        <span>템포: ${music.tempo}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 스크립트 복사
+        elements.copyScript.addEventListener('click', () => {
+            const scriptText = elements.scriptContent.textContent;
+            navigator.clipboard.writeText(scriptText).then(() => {
+                const originalText = elements.copyScript.innerHTML;
+                elements.copyScript.innerHTML = '<i class="fas fa-check mr-2"></i>복사됨!';
+                elements.copyScript.classList.add('bg-green-600');
+                setTimeout(() => {
+                    elements.copyScript.innerHTML = originalText;
+                    elements.copyScript.classList.remove('bg-green-600');
+                }, 2000);
+            });
+        });
+
+        // 파일 업로드
+        elements.assetUpload.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            console.log('업로드된 파일:', files);
+            // 여기에 파일 처리 로직 추가
+        });
+
+        // 생성 버튼 이벤트
+        elements.generateBtn.addEventListener('click', generateShorts);
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            // 기본 카테고리 선택
+            document.querySelector('.category-btn').click();
+        });
+    </script>
+</body>
+</html>

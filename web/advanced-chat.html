@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 고급 AI 챗 - 다중 모드 지원</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .chat-container {
+            height: calc(100vh - 200px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-bubble {
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: #e3f2fd;
+            border-radius: 18px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            margin: 0 2px;
+            background: #1976d2;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .upload-zone {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .upload-zone.dragover {
+            border-color: #4299e1;
+            background: #ebf8ff;
+        }
+
+        .voice-button {
+            transition: all 0.3s;
+        }
+
+        .voice-button.recording {
+            background: #ef4444;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .model-selector {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+
+        .context-panel {
+            background: #f8fafc;
+            border-left: 3px solid #4299e1;
+            padding: 15px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- 통합 네비게이션 로드 -->
+    <div id="navigation-container"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 헤더 -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">🤖 고급 AI 챗</h1>
+                    <p class="text-gray-600">텍스트, 이미지, 파일, 음성을 지원하는 다중 모드 AI 어시스턴트</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <select id="modelSelector" class="model-selector">
+                        <option value="gpt-4">GPT-4 (고성능)</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo (빠름)</option>
+                        <option value="claude-3">Claude-3 (분석전문)</option>
+                        <option value="gemini-pro">Gemini Pro (멀티모드)</option>
+                    </select>
+                    <button id="clearChat" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
+                        <i class="fas fa-trash mr-2"></i>대화 초기화
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 메인 챗 컨테이너 -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <!-- 챗 메시지 영역 -->
+            <div class="chat-container">
+                <div id="chatMessages" class="flex-1 overflow-y-auto p-6 space-y-4">
+                    <!-- 환영 메시지 -->
+                    <div class="message-bubble text-center mb-6">
+                        <div class="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-full">
+                            <i class="fas fa-robot mr-2"></i>
+                            안녕하세요! 저는 다중 모드 AI 어시스턴트입니다. 텍스트, 이미지, 파일, 음성으로 대화할 수 있습니다.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 파일 업로드 영역 -->
+                <div id="uploadZone" class="upload-zone mx-6 mb-4">
+                    <input type="file" id="fileInput" multiple accept="image/*,.pdf,.doc,.docx,.txt,.csv" class="hidden">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-600">파일을 여기에 드래그하거나 클릭하여 업로드하세요</p>
+                    <p class="text-sm text-gray-500 mt-1">지원 형식: 이미지, PDF, 문서, 텍스트, CSV</p>
+                </div>
+
+                <!-- 입력 영역 -->
+                <div class="border-t border-gray-200 p-4">
+                    <div class="flex items-center space-x-3">
+                        <!-- 음성 녹음 버튼 -->
+                        <button id="voiceButton" class="voice-button bg-gray-100 text-gray-600 p-3 rounded-full hover:bg-gray-200 transition">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+
+                        <!-- 텍스트 입력 -->
+                        <div class="flex-1 relative">
+                            <textarea
+                                id="messageInput"
+                                class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                rows="1"
+                                placeholder="메시지를 입력하세요... (Shift+Enter로 줄바꿈)"
+                            ></textarea>
+                            <button id="attachButton" class="absolute right-2 top-2 text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-paperclip"></i>
+                            </button>
+                        </div>
+
+                        <!-- 전송 버튼 -->
+                        <button id="sendButton" class="bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+
+                    <!-- 빠른 명령어 -->
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <span class="quick-command bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm cursor-pointer hover:bg-gray-200" data-command="요약">
+                            📝 요약
+                        </span>
+                        <span class="quick-command bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm cursor-pointer hover:bg-gray-200" data-command="분석">
+                            📊 분석
+                        </span>
+                        <span class="quick-command bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm cursor-pointer hover:bg-gray-200" data-command="번역">
+                            🌐 번역
+                        </span>
+                        <span class="quick-command bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm cursor-pointer hover:bg-gray-200" data-command="코드">
+                            💻 코드
+                        </span>
+                        <span class="quick-command bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm cursor-pointer hover:bg-gray-200" data-command="아이디어">
+                            💡 아이디어
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 컨텍스트 패널 -->
+        <div id="contextPanel" class="context-panel rounded-xl shadow-lg p-6 mt-6 hidden">
+            <h3 class="font-semibold text-lg mb-3">📋 현재 컨텍스트</h3>
+            <div id="contextContent" class="text-sm text-gray-600"></div>
+        </div>
+    </div>
+
+    <!-- 네비게이션 로드 스크립트 -->
+    <script src="script.js"></script>
+
+    <script>
+        // 챗 상태 관리
+        const chatState = {
+            messages: [],
+            isTyping: false,
+            isRecording: false,
+            attachedFiles: [],
+            currentModel: 'gpt-4'
+        };
+
+        // DOM 요소
+        const elements = {
+            chatMessages: document.getElementById('chatMessages'),
+            messageInput: document.getElementById('messageInput'),
+            sendButton: document.getElementById('sendButton'),
+            voiceButton: document.getElementById('voiceButton'),
+            fileInput: document.getElementById('fileInput'),
+            uploadZone: document.getElementById('uploadZone'),
+            modelSelector: document.getElementById('modelSelector'),
+            clearChat: document.getElementById('clearChat'),
+            contextPanel: document.getElementById('contextPanel'),
+            contextContent: document.getElementById('contextContent'),
+            attachButton: document.getElementById('attachButton')
+        };
+
+        // 메시지 추가 함수
+        function addMessage(content, isUser = false, type = 'text') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message-bubble flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`;
+
+            const bubbleClass = isUser
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-800';
+
+            const icon = isUser ? '👤' : '🤖';
+            const time = new Date().toLocaleTimeString('ko-KR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            let messageContent = `
+                <div class="max-w-2xl">
+                    <div class="flex items-center mb-1 ${isUser ? 'justify-end' : 'justify-start'}">
+                        <span class="text-xs text-gray-500 mr-2">${time}</span>
+                        <span class="text-lg">${icon}</span>
+                    </div>
+                    <div class="${bubbleClass} px-4 py-3 rounded-lg ${type === 'image' ? 'p-2' : ''}">
+            `;
+
+            if (type === 'image') {
+                messageContent += `<img src="${content}" alt="업로드된 이미지" class="max-w-full rounded-lg">`;
+            } else {
+                messageContent += `<div class="whitespace-pre-wrap">${content}</div>`;
+            }
+
+            messageContent += `
+                    </div>
+                </div>
+            `;
+
+            messageDiv.innerHTML = messageContent;
+            elements.chatMessages.appendChild(messageDiv);
+            elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+
+            // 메시지 저장
+            chatState.messages.push({
+                content,
+                isUser,
+                type,
+                timestamp: new Date()
+            });
+
+            return messageDiv;
+        }
+
+        // 타이핑 인디케이터 표시
+        function showTypingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.id = 'typingIndicator';
+            indicator.className = 'message-bubble flex justify-start mb-4';
+            indicator.innerHTML = `
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            elements.chatMessages.appendChild(indicator);
+            elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+            chatState.isTyping = true;
+        }
+
+        // 타이핑 인디케이터 숨기기
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+            chatState.isTyping = false;
+        }
+
+        // AI 응답 생성 (시뮬레이션)
+        async function generateAIResponse(userMessage) {
+            showTypingIndicator();
+
+            // 실제로는 여기서 AI API 호출
+            await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1500));
+
+            hideTypingIndicator();
+
+            // 간단한 응답 생성 로직
+            let response = "🤖 AI 응답: ";
+
+            if (userMessage.includes('요약')) {
+                response += "요약 기능을 활성화합니다. 어떤 내용을 요약해드릴까요?";
+            } else if (userMessage.includes('분석')) {
+                response += "분석 기능을 준비 중입니다. 분석할 데이터나 내용을 알려주세요.";
+            } else if (userMessage.includes('번역')) {
+                response += "번역 기능을 지원합니다. 어떤 언어로 번역할까요?";
+            } else if (userMessage.includes('코드')) {
+                response += "코드 생성 및 분석 기능을 제공합니다. 어떤 코드가 필요하신가요?";
+            } else if (userMessage.includes('아이디어')) {
+                response += "창의적인 아이디어를 제안해드립니다. 어떤 주제에 대한 아이디어가 필요하신가요?";
+            } else {
+                const responses = [
+                    "흥미로운 질문입니다. 더 자세히 설명해주시겠어요?",
+                    "좋은 질문입니다. 다음과 같이 생각해볼 수 있습니다...",
+                    "저의 도움이 필요하신 부분을 더 구체적으로 알려주세요.",
+                    "이해했습니다. 추가적으로 궁금한 점이 있으신가요?",
+                    "훌륭한 질문입니다. 최선을 다해 답변해드리겠습니다."
+                ];
+                response += responses[Math.floor(Math.random() * responses.length)];
+            }
+
+            addMessage(response, false);
+        }
+
+        // 메시지 전송
+        async function sendMessage() {
+            const message = elements.messageInput.value.trim();
+            if (!message && chatState.attachedFiles.length === 0) return;
+
+            // 사용자 메시지 추가
+            if (message) {
+                addMessage(message, true);
+            }
+
+            // 첨부 파일 처리
+            if (chatState.attachedFiles.length > 0) {
+                for (const file of chatState.attachedFiles) {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            addMessage(e.target.result, true, 'image');
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        addMessage(`📎 첨부 파일: ${file.name}`, true);
+                    }
+                }
+            }
+
+            // 입력창 초기화
+            elements.messageInput.value = '';
+            chatState.attachedFiles = [];
+
+            // AI 응답 생성
+            await generateAIResponse(message);
+        }
+
+        // 음성 녹음
+        let mediaRecorder;
+        let audioChunks = [];
+
+        async function toggleVoiceRecording() {
+            if (!chatState.isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        // 여기서 음성을 텍스트로 변환하는 API 호출
+                        addMessage("🎤 음성 메시지가 녹음되었습니다.", true);
+                        await generateAIResponse("음성으로 녹음된 메시지입니다.");
+                    };
+
+                    mediaRecorder.start();
+                    chatState.isRecording = true;
+                    elements.voiceButton.classList.add('recording');
+                    elements.voiceButton.innerHTML = '<i class="fas fa-stop"></i>';
+                } catch (error) {
+                    console.error('음성 녹음 오류:', error);
+                    alert('음성 녹음을 시작할 수 없습니다. 마이크 권한을 확인해주세요.');
+                }
+            } else {
+                mediaRecorder.stop();
+                chatState.isRecording = false;
+                elements.voiceButton.classList.remove('recording');
+                elements.voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
+            }
+        }
+
+        // 파일 업로드 처리
+        function handleFileUpload(files) {
+            for (const file of files) {
+                chatState.attachedFiles.push(file);
+            }
+            updateAttachmentIndicator();
+        }
+
+        function updateAttachmentIndicator() {
+            if (chatState.attachedFiles.length > 0) {
+                elements.attachButton.innerHTML = `
+                    <i class="fas fa-paperclip text-blue-500"></i>
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                        ${chatState.attachedFiles.length}
+                    </span>
+                `;
+            } else {
+                elements.attachButton.innerHTML = '<i class="fas fa-paperclip"></i>';
+            }
+        }
+
+        // 이벤트 리스너
+        elements.sendButton.addEventListener('click', sendMessage);
+
+        elements.messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        elements.voiceButton.addEventListener('click', toggleVoiceRecording);
+
+        elements.clearChat.addEventListener('click', () => {
+            if (confirm('대화 내용을 모두 삭제하시겠습니까?')) {
+                elements.chatMessages.innerHTML = `
+                    <div class="message-bubble text-center mb-6">
+                        <div class="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-full">
+                            <i class="fas fa-robot mr-2"></i>
+                            대화가 초기화되었습니다. 새로운 대화를 시작해보세요!
+                        </div>
+                    </div>
+                `;
+                chatState.messages = [];
+            }
+        });
+
+        elements.modelSelector.addEventListener('change', (e) => {
+            chatState.currentModel = e.target.value;
+            addMessage(`🔄 AI 모델을 ${e.target.options[e.target.selectedIndex].text}(으)로 변경했습니다.`, false);
+        });
+
+        // 파일 업로드
+        elements.attachButton.addEventListener('click', () => {
+            elements.fileInput.click();
+        });
+
+        elements.fileInput.addEventListener('change', (e) => {
+            handleFileUpload(e.target.files);
+        });
+
+        // 드래그 앤 드롭
+        elements.uploadZone.addEventListener('click', () => {
+            elements.fileInput.click();
+        });
+
+        elements.uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            elements.uploadZone.classList.add('dragover');
+        });
+
+        elements.uploadZone.addEventListener('dragleave', () => {
+            elements.uploadZone.classList.remove('dragover');
+        });
+
+        elements.uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            elements.uploadZone.classList.remove('dragover');
+            handleFileUpload(e.dataTransfer.files);
+        });
+
+        // 빠른 명령어
+        document.querySelectorAll('.quick-command').forEach(command => {
+            command.addEventListener('click', () => {
+                const cmd = command.dataset.command;
+                elements.messageInput.value = cmd + ' ';
+                elements.messageInput.focus();
+            });
+        });
+
+        // 자동 높이 조절
+        elements.messageInput.addEventListener('input', () => {
+            elements.messageInput.style.height = 'auto';
+            elements.messageInput.style.height = Math.min(elements.messageInput.scrollHeight, 120) + 'px';
+        });
+    </script>
+</body>
+</html>
