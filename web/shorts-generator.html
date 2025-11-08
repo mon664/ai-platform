@@ -439,13 +439,15 @@
                 const keyword = keywords.length > 0 ? keywords[i % keywords.length] : 'random';
                 scenes.push({
                     number: i + 1,
-                    imageUrl: `https://source.unsplash.com/400x600/?${encodeURIComponent(keyword)}&t=${Date.now()}_${i}`
+                    // Using loremflickr for more stable keyword-based images
+                    imageUrl: `https://loremflickr.com/400/600/${encodeURIComponent(keyword)}?lock=${Date.now() + i}`
                 });
             }
 
             return {
                 script: generateDemoScript(formData),
-                audioUrl: '#', // Placeholder
+                // Using a real audio file placeholder
+                audioUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3',
                 images: scenes
             };
         }
