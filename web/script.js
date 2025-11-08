@@ -1,112 +1,23 @@
 // AI CLI Web Interface JavaScript
 
-// 통합 네비게이션 로드 (개선된 버전)
+// 통합 네비게이션 로드
 async function loadNavigation() {
     try {
         const response = await fetch('components/top-navigation.html');
         if (!response.ok) {
-            throw new Error('네비게이션 파일 로드 실패');
+            throw new Error('Navigation file not found');
         }
         const navigationHTML = await response.text();
         const navContainer = document.getElementById('navigation-container');
         if (navContainer) {
             navContainer.innerHTML = navigationHTML;
-            console.log('네비게이션이 성공적으로 로드되었습니다.');
+            highlightCurrentPage();
         }
     } catch (error) {
-        console.error('네비게이션 로드 실패:', error);
-        // 네비게이션 로드 실패 시 기본 네비게이션 표시
+        console.error('Failed to load navigation:', error);
         const navContainer = document.getElementById('navigation-container');
         if (navContainer) {
-            navContainer.innerHTML = `
-                <nav style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                    <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <span style="font-size: 24px;">🚀</span>
-                                <span style="color: white; font-size: 20px; font-weight: bold;">AI 통합 플랫폼</span>
-                            </div>
-                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                                <a href="index.html" style="color: white; text-decoration: none; padding: 10px 16px; border-radius: 8px; background: rgba(255,255,255,0.1); transition: all 0.3s;">🏠 대시보드</a>
-                                <a href="data-input.html" style="color: white; text-decoration: none; padding: 10px 16px; border-radius: 8px; background: rgba(255,255,255,0.1); transition: all 0.3s;">📊 데이터 입력</a>
-                                <a href="shorts-generator.html" style="color: white; text-decoration: none; padding: 10px 16px; border-radius: 8px; background: rgba(255,255,255,0.1); transition: all 0.3s;">🎬 쇼츠 생성기</a>
-                                <a href="story-generator.html" style="color: white; text-decoration: none; padding: 10px 16px; border-radius: 8px; background: rgba(255,255,255,0.1); transition: all 0.3s;">📖 장면 생성기</a>
-                                <a href="character-generator.html" style="color: white; text-decoration: none; padding: 10px 16px; border-radius: 8px; background: rgba(255,255,255,0.1); transition: all 0.3s;">👤 캐릭터 생성기</a>
-                                <a href="blog-generator.html" style="color: white; text-decoration: none; padding: 10px 16px; border-radius: 8px; background: rgba(255,255,255,0.1); transition: all 0.3s;">📝 블로그 생성기</a>
-                            </div>
-                        </div>
-                    </div>
-                </nav>
-            `;
-        }
-    }
-}
-
-// 페이지 로드 시 네비게이션 로드
-document.addEventListener('DOMContentLoaded', function() {
-    loadNavigation();
-});
-
-// State Management
-const state = {
-    isDarkMode: false,
-    currentLanguage: 'ko',
-    aiModel: 'gpt-4',
-    businessType: 'food',
-    // Mock data for demonstration
-    inventoryData: {
-        '배추김치': { current: 45, safe: 50, unit: 'kg' },
-        '된장찌개': { current: 30, safe: 40, unit: 'kg' },
-        '순대': { current: 15, safe: 25, unit: 'kg' },
-        '김': { current: 80, safe: 100, unit: '장' },
-        '고춧가루': { current: 5, safe: 10, unit: 'kg' }
-    },
-    salesData: {
-        daily: 5000000,
-        weekly: 35000000,
-        monthly: 150000000,
-        products: [
-            { name: '김치찌개', sales: 2500000, percentage: 50 },
-            { name: '된장찌개', sales: 1800000, percentage: 36 },
-            { name: '순대', sales: 700000, percentage: 14 }
-        ]
-    }
-};
-
-// Load navigation component
-async function loadNavigation() {
-    try {
-        const response = await fetch('navigation.html');
-        if (!response.ok) {
-            throw new Error('네비게이션 파일 로드 실패');
-        }
-        const navigationHTML = await response.text();
-        const container = document.getElementById('navigation-container');
-        if (container) {
-            container.innerHTML = navigationHTML;
-
-            // 현재 페이지 강조
-            highlightCurrentPage();
-        } else {
-            console.error('네비게이션 컨테이너를 찾을 수 없습니다.');
-        }
-    } catch (error) {
-        console.error('네비게이션 로드 실패:', error);
-        // 대체 간단 네비게이션 표시
-        const container = document.getElementById('navigation-container');
-        if (container) {
-            container.innerHTML = `
-                <nav class="bg-blue-600 text-white p-4">
-                    <div class="max-w-7xl mx-auto flex justify-between">
-                        <h1 class="text-xl font-bold">AI 경리봇</h1>
-                        <div class="space-x-4">
-                            <a href="index.html" class="hover:underline">대시보드</a>
-                            <a href="data-input.html" class="hover:underline">데이터 입력</a>
-                            <a href="sales-analysis.html" class="hover:underline">매출 분석</a>
-                        </div>
-                    </div>
-                </nav>
-            `;
+            navContainer.innerHTML = '<p style="color: red; text-align: center;">Error: Navigation could not be loaded.</p>';
         }
     }
 }
@@ -119,9 +30,9 @@ function highlightCurrentPage() {
     navItems.forEach(item => {
         const href = item.getAttribute('href');
         if (href === currentPage) {
-            item.classList.add('bg-white', 'bg-opacity-20');
+            item.classList.add('bg-gray-700', 'text-white');
         } else {
-            item.classList.remove('bg-white', 'bg-opacity-20');
+            item.classList.remove('bg-gray-700', 'text-white');
         }
     });
 }
@@ -129,9 +40,12 @@ function highlightCurrentPage() {
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     loadNavigation();
-    loadSettings();
-    setupEventListeners();
-    checkSystemTheme();
+    // The following functions are called on the index.html page
+    if (document.getElementById('language')) {
+        loadSettings();
+        setupEventListeners();
+        checkSystemTheme();
+    }
 });
 
 // Load saved settings

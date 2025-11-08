@@ -555,6 +555,10 @@ app.post('/api/haccp-records', (req, res) => {
     );
 });
 
+const axios = require('axios');
+
+// ... (기존 코드는 그대로 유지) ...
+
 // AI Chat Processing
 app.post('/api/chat', async (req, res) => {
     const { message } = req.body;
@@ -564,12 +568,112 @@ app.post('/api/chat', async (req, res) => {
         const response = await processChatMessage(message);
         res.json({ response });
     } catch (error) {
+        console.error('Chat API Error:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
+// Dolibarr Sale/Purchase Functions (converted to JS with axios)
+async function saveDolSale(data) {
+    const apiKey = process.env.DOLIBARR_API_KEY;
+    const baseUrl = process.env.DOLIBARR_URL;
+
+    const payload = {
+        ref: `SALE-${Date.now()}`,
+        date: Math.floor(new Date(data.date).getTime() / 1000),
+        array_lines: [{
+            description: data.product,
+            qty: data.quantity,
+            subprice: data.price,
+            total_ht: data.quantity * data.price,
+            total_ttc: data.quantity * data.price * 1.1
+        }]
+    };
+
+    const response = await axios.post(`${baseUrl}/api/index.php/orders`, payload, {
+        headers: {
+            'Content-Type': 'application/json',
+            'DOLAPIKEY': apiKey
+        }
+    });
+
+    return response.data;
+}
+
+async function saveDolPurchase(data) {
+    const apiKey = process.env.DOLIBARR_API_KEY;
+    const baseUrl = process.env.DOLIBARR_URL;
+
+    const payload = {
+        ref: `PUR-${Date.now()}`,
+        date: Math.floor(new Date(data.date).getTime() / 1000),
+        array_lines: [{
+            description: data.product,
+            qty: data.quantity,
+            subprice: data.price,
+            total_ht: data.quantity * data.price,
+            total_ttc: data.quantity * data.price * 1.1
+        }]
+    };
+
+    const response = await axios.post(`${baseUrl}/api/index.php/supplierorders`, payload, {
+        headers: {
+            'Content-Type': 'application/json',
+            'DOLAPIKEY': apiKey
+        }
+    });
+
+    return response.data;
+}
+
+
+// Enhanced AI analysis function placeholder
+async function analyzeWithGLM(message) {
+    console.log(`Analyzing message with GLM: ${message}`);
+    // This is a placeholder. In a real implementation, this would call an AI API.
+    if (message.includes('판매')) {
+        // Example: "강원삼푸터에 김치찌개 500개 판매"
+        const parts = message.split(' ');
+        return {
+            action: 'sale',
+            data: {
+                product: parts.find(p => p.includes('김치찌개')) || 'Unknown Product',
+                quantity: parseInt(parts.find(p => !isNaN(parseInt(p)))) || 0,
+                price: 10000, // Assuming a default price
+                customer: parts[0],
+                date: new Date().toISOString()
+            }
+        };
+    } else if (message.includes('구매')) {
+        const parts = message.split(' ');
+        return {
+            action: 'purchase',
+            data: {
+                product: parts.find(p => p.includes('김치')) || 'Unknown Product',
+                quantity: parseInt(parts.find(p => !isNaN(parseInt(p)))) || 0,
+                price: 5000, // Assuming a default price
+                vendor: parts[0],
+                date: new Date().toISOString()
+            }
+        };
+    }
+    return { action: 'none', data: {} };
+}
+
+
 async function processChatMessage(message) {
-    // Simple command processing
+    // First, check for Dolibarr-related actions
+    const aiResult = await analyzeWithGLM(message);
+    
+    if (aiResult.action === 'sale') {
+        const result = await saveDolSale(aiResult.data);
+        return `✅ 판매 등록 완료! Dolibarr 주문 ID: ${result}`;
+    } else if (aiResult.action === 'purchase') {
+        const result = await saveDolPurchase(aiResult.data);
+        return `✅ 구매 등록 완료! Dolibarr 발주 ID: ${result}`;
+    }
+
+    // If not a Dolibarr action, proceed with existing logic
     const lowerMessage = message.toLowerCase();
 
     if (lowerMessage.includes('매출') && lowerMessage.includes('분석')) {
@@ -583,7 +687,7 @@ async function processChatMessage(message) {
     } else if (lowerMessage.includes('온도') && lowerMessage.includes('기록')) {
         return await handleTemperatureRequest(message);
     } else {
-        return `이해했습니다! "${message}" 작업을 처리하겠습니다.`;
+        return `이해했습니다! "${message}" 작업을 처리하겠습니다. (Dolibarr 연동 없음)`;
     }
 }
 
@@ -781,6 +885,31 @@ app.post('/api/upload-invoice', upload.single('invoice'), (req, res) => {
         size: req.file.size
     });
 });
+
+const { exec } = require('child_process');
+
+// ... (기존 코드) ...
+
+// Cron Job for Auto-Blog
+app.get('/api/cron/auto-blog', (req, res) => {
+    const token = req.query.token;
+    const cronSecret = process.env.CRON_SECRET;
+
+    if (!cronSecret || token !== cronSecret) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Execute the TypeScript cron job script using ts-node
+    exec('ts-node ./api/cron/auto-blog.ts', (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Cron job execution error: ${error.message}`);
+            return res.status(500).json({ error: 'Cron job failed', details: stderr });
+        }
+        console.log(`Cron job output: ${stdout}`);
+        res.status(200).json({ success: true, message: 'Cron job executed successfully', output: stdout });
+    });
+});
+
 
 // Analytics endpoints
 app.get('/api/analytics/dashboard', (req, res) => {
