@@ -160,6 +160,236 @@
             </div>
         </div>
 
+        <!-- AI Assistant Features -->
+        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
+            <div class="flex items-center mb-6">
+                <div class="bg-white bg-opacity-20 p-3 rounded-lg mr-4">
+                    <i class="fas fa-robot text-white text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">AI 경리봇 비서</h2>
+                    <p class="text-purple-100">채팅으로 모든 업무를 자동화하세요</p>
+                </div>
+            </div>
+
+            <!-- Chat Interface -->
+            <div class="bg-white rounded-lg p-4 mb-6">
+                <div class="space-y-3 mb-4 max-h-60 overflow-y-auto" id="chatHistory">
+                    <div class="flex items-start space-x-2">
+                        <div class="bg-purple-100 p-2 rounded-lg">
+                            <i class="fas fa-robot text-purple-600 text-sm"></i>
+                        </div>
+                        <div class="bg-gray-100 rounded-lg p-3 max-w-xs">
+                            <p class="text-sm text-gray-700">안녕하세요! AI 경리봇입니다. 무엇을 도와드릴까요?</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex space-x-2">
+                    <input
+                        type="text"
+                        id="chatInput"
+                        class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-700"
+                        placeholder="명령을 입력하세요... (예: 매출 분석해줘)"
+                        onkeypress="if(event.key === 'Enter') sendChatMessage()"
+                    >
+                    <button
+                        onclick="sendChatMessage()"
+                        class="bg-purple-600 text-white p-3 px-4 rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Commands -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <button onclick="quickCommand('매출 분석해줘')" class="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg text-sm transition-colors">
+                    📊 매출 분석
+                </button>
+                <button onclick="quickCommand('재고 현황 알려줘')" class="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg text-sm transition-colors">
+                    📦 재고 현황
+                </button>
+                <button onclick="quickCommand('생산 지시해줘')" class="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg text-sm transition-colors">
+                    🏭 생산 지시
+                </button>
+                <button onclick="quickCommand('위생점검 해줘')" class="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg text-sm transition-colors">
+                    🛡️ 위생점검
+                </button>
+            </div>
+        </div>
+
+        <!-- Business Analytics -->
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <!-- Sales Analysis -->
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <div class="flex items-center mb-4">
+                    <div class="bg-green-100 p-3 rounded-lg mr-4">
+                        <i class="fas fa-chart-line text-green-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900">매출/원가 분석</h2>
+                        <p class="text-sm text-gray-500">실시간 경영 현황 분석</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">분석 기간</label>
+                        <select id="analysisPeriod" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            <option value="daily">일별</option>
+                            <option value="weekly">주별</option>
+                            <option value="monthly">월별</option>
+                        </select>
+                    </div>
+
+                    <button
+                        onclick="analyzeSales()"
+                        class="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+                    >
+                        <i class="fas fa-chart-bar mr-2"></i>
+                        매출 분석 실행
+                    </button>
+
+                    <div id="salesResult" class="hidden">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-2">📊 분석 결과</h4>
+                            <div id="salesContent" class="text-sm text-gray-700 space-y-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Management -->
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <div class="flex items-center mb-4">
+                    <div class="bg-blue-100 p-3 rounded-lg mr-4">
+                        <i class="fas fa-warehouse text-blue-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900">재고 관리</h2>
+                        <p class="text-sm text-gray-500">자동 발주 및 재고 추적</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">재고 현황</label>
+                        <div id="inventoryStatus" class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                            <div class="text-sm text-gray-600">실시간 재고 데이터 로딩 중...</div>
+                        </div>
+                    </div>
+
+                    <button
+                        onclick="checkInventory()"
+                        class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                    >
+                        <i class="fas fa-sync mr-2"></i>
+                        재고 현황 확인
+                    </button>
+
+                    <button
+                        onclick="autoPurchase()"
+                        class="w-full bg-orange-600 text-white py-3 px-4 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center"
+                    >
+                        <i class="fas fa-shopping-cart mr-2"></i>
+                        자동 발주 실행
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Production & Quality Control -->
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <!-- Production Management -->
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <div class="flex items-center mb-4">
+                    <div class="bg-purple-100 p-3 rounded-lg mr-4">
+                        <i class="fas fa-industry text-purple-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900">생산 관리</h2>
+                        <p class="text-sm text-gray-500">생산 지시 및 BOM 관리</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">생산 지시</label>
+                        <input
+                            type="text"
+                            id="productionOrder"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            placeholder="예: 김치찌개 100개"
+                        >
+                    </div>
+
+                    <button
+                        onclick="createProductionOrder()"
+                        class="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center"
+                    >
+                        <i class="fas fa-play mr-2"></i>
+                        생산 지시 생성
+                    </button>
+
+                    <div id="productionResult" class="hidden">
+                        <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                            <div id="productionContent" class="text-sm text-gray-700 space-y-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HACCP & Quality Control -->
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <div class="flex items-center mb-4">
+                    <div class="bg-red-100 p-3 rounded-lg mr-4">
+                        <i class="fas fa-shield-alt text-red-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900">HACCP/품질관리</h2>
+                        <p class="text-sm text-gray-500">위생점검 및 품질 기록</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">온도 기록</label>
+                        <input
+                            type="number"
+                            id="temperature"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                            placeholder="온도 (°C)"
+                            step="0.1"
+                        >
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <button
+                            onclick="recordTemperature()"
+                            class="bg-red-600 text-white py-2 px-3 rounded-lg hover:bg-red-700 transition-colors text-sm"
+                        >
+                            온도 기록
+                        </button>
+                        <button
+                            onclick="healthCheck()"
+                            class="bg-green-600 text-white py-2 px-3 rounded-lg hover:bg-green-700 transition-colors text-sm"
+                        >
+                            위생점검
+                        </button>
+                    </div>
+
+                    <button
+                        onclick="generateHACCPReport()"
+                        class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                    >
+                        <i class="fas fa-file-medical mr-2"></i>
+                        HACCP 보고서 생성
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Configuration -->
         <div class="bg-white rounded-xl shadow-lg p-6">
             <div class="flex items-center mb-6">
@@ -168,21 +398,18 @@
                 </div>
                 <div>
                     <h2 class="text-xl font-semibold text-gray-900">설정</h2>
-                    <p class="text-sm text-gray-500">AI CLI 동작 설정</p>
+                    <p class="text-sm text-gray-500">AI 경리봇 동작 설정</p>
                 </div>
             </div>
 
             <div class="grid md:grid-cols-3 gap-6">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">기본 커밋 타입</label>
-                    <select id="defaultCommitType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
-                        <option value="feat">feat (새 기능)</option>
-                        <option value="fix">fix (버그 수정)</option>
-                        <option value="docs">docs (문서)</option>
-                        <option value="style">style (스타일)</option>
-                        <option value="refactor">refactor (리팩토링)</option>
-                        <option value="test">test (테스트)</option>
-                        <option value="chore">chore (기타)</option>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">업종 선택</label>
+                    <select id="businessType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <option value="food">식품 제조</option>
+                        <option value="retail">유통/소매</option>
+                        <option value="service">서비스</option>
+                        <option value="manufacturing">제조업</option>
                     </select>
                 </div>
 
