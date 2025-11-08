@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 쇼츠 생성기 - AI 통합 관리 플랫폼</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
         .shorts-container {
@@ -170,24 +171,15 @@
     <!-- 통합 네비게이션 로드 -->
     <div id="navigation-container"></div>
 
-    <div class="container">
-        <header>
-            <h1>🎬 AI 쇼츠 생성기</h1>
-            <p>AI가 자동으로 쇼츠 대본, 이미지, 음성을 생성합니다</p>
+    <div class="container mx-auto px-4">
+        <header class="text-center my-8">
+            <h1 class="text-4xl font-bold">🎬 AI 쇼츠 생성기</h1>
+            <p class="text-lg text-gray-600 mt-2">AI가 자동으로 쇼츠 대본, 이미지, 음성을 생성합니다</p>
         </header>
-
-        <nav class="nav-menu">
-            <a href="index.html" class="nav-link">🏠 홈</a>
-            <a href="data-input.html" class="nav-link">📊 데이터 입력</a>
-            <a href="shorts-generator.html" class="nav-link active">🎬 쇼츠 생성기</a>
-            <a href="story-generator.html" class="nav-link">📖 장면 생성기</a>
-            <a href="character-generator.html" class="nav-link">👤 캐릭터 생성기</a>
-            <a href="blog-generator.html" class="nav-link">📝 블로그 생성기</a>
-        </nav>
 
         <div class="shorts-container">
             <div class="generator-form">
-                <h2 style="color: white; margin-bottom: 20px;">쇼츠 생성 설정</h2>
+                <h2 style="color: white; margin-bottom: 20px;" class="text-2xl font-bold text-center">쇼츠 생성 설정</h2>
 
                 <div class="mode-selector">
                     <button class="mode-btn active" onclick="setMode('keyword')">키워드 모드</button>
@@ -200,32 +192,42 @@
                 <div class="form-group" id="keyword-group">
                     <label for="keyword">키워드 입력</label>
                     <input type="text" id="keyword" placeholder="예: 외식업 홍보, 맛집 소개">
-                    <button class="improve-btn" onclick="improveInput()">키워드 개선</button>
+                    <button class="improve-btn mt-2" onclick="improveInput()">AI로 키워드 개선</button>
+                    <div id="improved-keyword-area" class="mt-3 p-3 bg-gray-800 bg-opacity-50 rounded-lg hidden">
+                        <h4 class="text-sm font-semibold text-yellow-300 mb-2">✨ AI 개선 제안</h4>
+                        <p id="improved-keyword-text" class="text-white"></p>
+                    </div>
                 </div>
 
                 <div class="form-group hidden" id="prompt-group">
                     <label for="prompt">프롬프트 입력</label>
                     <textarea id="prompt" rows="4" placeholder="상세한 쇼츠 내용을 작성해주세요"></textarea>
-                    <button class="improve-btn" onclick="improveInput()">프롬프트 개선</button>
+                    <button class="improve-btn mt-2" onclick="improveInput()">AI로 프롬프트 개선</button>
+                    <div id="improved-prompt-area" class="mt-3 p-3 bg-gray-800 bg-opacity-50 rounded-lg hidden">
+                        <h4 class="text-sm font-semibold text-yellow-300 mb-2">✨ AI 개선 제안</h4>
+                        <p id="improved-prompt-text" class="text-white"></p>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="duration">영상 길이 (초)</label>
-                    <select id="duration">
-                        <option value="15">15초</option>
-                        <option value="30" selected>30초</option>
-                        <option value="60">60초</option>
-                        <option value="90">90초</option>
-                    </select>
-                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label for="duration">영상 길이 (초)</label>
+                        <select id="duration">
+                            <option value="15">15초</option>
+                            <option value="30" selected>30초</option>
+                            <option value="60">60초</option>
+                            <option value="90">90초</option>
+                        </select>
+                    </div>
 
-                <div class="form-group">
-                    <label for="sceneCount">장면 수</label>
-                    <select id="sceneCount">
-                        <option value="3">3개 장면</option>
-                        <option value="5" selected>5개 장면</option>
-                        <option value="8">8개 장면</option>
-                    </select>
+                    <div class="form-group">
+                        <label for="sceneCount">장면 수</label>
+                        <select id="sceneCount">
+                            <option value="3">3개 장면</option>
+                            <option value="5" selected>5개 장면</option>
+                            <option value="8">8개 장면</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -239,21 +241,22 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label for="ttsVoice">음성 목소리</label>
-                    <select id="ttsVoice">
-                        <option value="ko-KR-Neural2-A" selected>여성 1 (차분한 목소리)</option>
-                        <option value="ko-KR-Neural2-B">여성 2 (밝은 목소리)</option>
-                        <option value="ko-KR-Neural2-C">여성 3 (부드러운 목소리)</option>
-                        <option value="ko-KR-Wavenet-A">남성 1 (신뢰감 있는 목소리)</option>
-                        <option value="ko-KR-Wavenet-B">남성 2 (차분한 목소리)</option>
-                    </select>
-                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label for="ttsVoice">음성 목소리</label>
+                        <select id="ttsVoice">
+                            <option value="ko-KR-Neural2-A" selected>여성 1 (차분한 목소리)</option>
+                            <option value="ko-KR-Neural2-B">여성 2 (밝은 목소리)</option>
+                            <option value="ko-KR-Neural2-C">여성 3 (부드러운 목소리)</option>
+                            <option value="ko-KR-Wavenet-A">남성 1 (신뢰감 있는 목소리)</option>
+                            <option value="ko-KR-Wavenet-B">남성 2 (차분한 목소리)</option>
+                        </select>
+                    </div>
 
-                <div class="form-group">
-                    <label for="ttsSpeed">음성 속도</label>
-                    <input type="range" id="ttsSpeed" min="0.5" max="2.0" step="0.1" value="1.0">
-                    <span id="speedValue">1.0x</span>
+                    <div class="form-group">
+                        <label for="ttsSpeed">음성 속도 (<span id="speedValue">1.0x</span>)</label>
+                        <input type="range" id="ttsSpeed" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateSpeedValue()">
+                    </div>
                 </div>
 
                 <button class="generate-btn" onclick="generateShorts()">
@@ -262,25 +265,33 @@
             </div>
 
             <div id="loading-container" class="result-container hidden">
-                <h3>쇼츠 생성 중...</h3>
+                <h3 class="text-xl font-bold mb-4">쇼츠 생성 중...</h3>
                 <div class="progress-bar">
                     <div class="progress-fill" id="progress-fill"></div>
                 </div>
-                <p id="progress-text">초기화 중...</p>
+                <p id="progress-text" class="text-center text-gray-600 mt-2">초기화 중...</p>
             </div>
 
             <div id="result-container" class="result-container hidden">
-                <h3>✅ 쇼츠 생성 완료!</h3>
+                <h3 class="text-2xl font-bold mb-4">✅ 쇼츠 생성 완료!</h3>
 
-                <div class="script-result" id="script-result"></div>
-
-                <div class="audio-player" id="audio-container">
-                    <h4>🎵 음성 파일</h4>
-                    <audio controls id="audio-player"></audio>
+                <div class="mb-6">
+                    <h4 class="text-xl font-semibold mb-2">📜 생성된 대본</h4>
+                    <div class="script-result" id="script-result"></div>
                 </div>
 
-                <h4>🖼️ 장면 이미지</h4>
-                <div class="images-grid" id="images-grid"></div>
+
+                <div class="mb-6">
+                    <h4 class="text-xl font-semibold mb-2">🎵 생성된 음성</h4>
+                    <div class="audio-player" id="audio-container">
+                        <audio controls id="audio-player" class="w-full"></audio>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xl font-semibold mb-2">🖼️ 생성된 장면 이미지</h4>
+                    <div class="images-grid" id="images-grid"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -331,9 +342,12 @@
         }
 
         async function improveInput() {
-            const input = currentMode === 'keyword'
-                ? document.getElementById('keyword').value
-                : document.getElementById('prompt').value;
+            const isKeyword = currentMode === 'keyword';
+            const inputEl = isKeyword ? document.getElementById('keyword') : document.getElementById('prompt');
+            const suggestionArea = isKeyword ? document.getElementById('improved-keyword-area') : document.getElementById('improved-prompt-area');
+            const suggestionText = isKeyword ? document.getElementById('improved-keyword-text') : document.getElementById('improved-prompt-text');
+            
+            const input = inputEl.value;
 
             if (!input.trim()) {
                 showError('입력 내용을 먼저 작성해주세요');
@@ -341,16 +355,12 @@
             }
 
             try {
-                showSuccess('입력 내용 개선 중...');
-                // 여기에 API 호출 로직 추가
-                // 현재는 간단한 개선 텍스트로 대체
-                const improved = `${input} (AI 개선됨: 더 구체적이고 흥미로운 내용)`;
+                showSuccess('AI가 입력 내용을 개선하고 있습니다...');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                const improved = `${input}, (AI 추천: ${input}를 활용한 바이럴 영상 팁, 10대 타겟, 챌린지 아이디어)`;
 
-                if (currentMode === 'keyword') {
-                    document.getElementById('keyword').value = improved;
-                } else {
-                    document.getElementById('prompt').value = improved;
-                }
+                suggestionText.textContent = improved;
+                suggestionArea.classList.remove('hidden');
 
                 showSuccess('입력 내용이 개선되었습니다!');
             } catch (error) {
@@ -389,13 +399,13 @@
 
             try {
                 updateProgress(10, '쇼츠 대본 생성 중...');
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                await new Promise(resolve => setTimeout(resolve, 1500));
 
                 updateProgress(30, '음성 파일 생성 중...');
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                await new Promise(resolve => setTimeout(resolve, 1500));
 
                 updateProgress(60, '장면 이미지 생성 중...');
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                await new Promise(resolve => setTimeout(resolve, 2000));
 
                 updateProgress(90, '최종 조합 중...');
                 await new Promise(resolve => setTimeout(resolve, 1000));
@@ -422,16 +432,20 @@
 
         function generateDemoResult(formData) {
             const scenes = [];
+            const keywords = formData.input.split(',').map(k => k.trim()).filter(k => k);
+            
             for (let i = 0; i < parseInt(formData.sceneCount); i++) {
+                // Use a keyword for each image, cycle if necessary
+                const keyword = keywords.length > 0 ? keywords[i % keywords.length] : 'random';
                 scenes.push({
                     number: i + 1,
-                    imageUrl: `https://picsum.photos/seed/scene${i+1}/400/600.jpg`
+                    imageUrl: `https://source.unsplash.com/400x600/?${encodeURIComponent(keyword)}&t=${Date.now()}_${i}`
                 });
             }
 
             return {
                 script: generateDemoScript(formData),
-                audioUrl: '#',
+                audioUrl: '#', // Placeholder
                 images: scenes
             };
         }
