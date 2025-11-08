@@ -283,7 +283,7 @@
 
 
                 <div class="mb-6">
-                    <h4 class="text-xl font-semibold mb-2">🎵 생성된 음성</h4>
+                    <h4 class="text-xl font-semibold mb-2">🎵 생성된 음성 (데모)</h4>
                     <div class="audio-player" id="audio-container">
                         <audio controls id="audio-player" class="w-full"></audio>
                     </div>
@@ -292,6 +292,11 @@
                 <div>
                     <h4 class="text-xl font-semibold mb-2">🖼️ 생성된 장면 이미지</h4>
                     <div class="images-grid" id="images-grid"></div>
+                </div>
+
+                <div class="mt-6 flex gap-4">
+                    <button class="action-btn regenerate-btn w-full" onclick="generateShorts()">🔄 전체 재생성</button>
+                    <button class="action-btn download-btn w-full" onclick="downloadAll()">📦 전체 다운로드</button>
                 </div>
             </div>
         </div>
@@ -409,7 +414,7 @@
                 const keyword = keywords[i % keywords.length] || mainKeyword;
                 images.push({
                     number: i + 1,
-                    imageUrl: `https://via.placeholder.com/400x600.png?text=${encodeURIComponent(keyword)}`
+                    imageUrl: `https://dummyimage.com/400x600/cccccc/000000.png&text=${encodeURIComponent(keyword)}`
                 });
             }
 
@@ -431,9 +436,23 @@
                 sceneDiv.innerHTML = `
                     <div class="scene-number">장면 ${scene.number}</div>
                     <img src="${scene.imageUrl}" alt="장면 ${scene.number}">
+                    <button class="regenerate-btn" onclick="regenerateScene(${scene.number})">🔄</button>
                 `;
                 imagesGrid.appendChild(sceneDiv);
             });
+        }
+
+        function regenerateScene(sceneNumber) {
+            showAlert(`${sceneNumber}번 장면을 재생성합니다 (데모).`);
+            const imageEl = document.querySelector(`.scene-image:nth-child(${sceneNumber}) img`);
+            const currentSrc = new URL(imageEl.src);
+            const keyword = currentSrc.searchParams.get('text');
+            // Add a random value to bust cache and get a new image
+            imageEl.src = `https://dummyimage.com/400x600/cccccc/000000.png&text=${keyword}&rand=${Math.random()}`;
+        }
+
+        function downloadAll() {
+            showAlert('전체 다운로드 기능은 현재 개발 중입니다.');
         }
     </script>
     <!-- 네비게이션 로드 스크립트 -->

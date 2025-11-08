@@ -441,7 +441,7 @@
                 id: uuidv4(),
                 name: formData.characterName || 'AI 생성 캐릭터',
                 description: `"${formData.prompt}"라는 설명에 따라 생성된 캐릭터입니다. ${formData.imageStyle} 스타일이며, ${formData.tags}의 특징을 가집니다.`,
-                imageUrl: `https://via.placeholder.com/500x500.png?text=${encodeURIComponent(keyword)}`,
+                imageUrl: `https://dummyimage.com/500x500/cccccc/000000.png&text=${encodeURIComponent(keyword)}`,
                 style: formData.imageStyle,
                 ratio: formData.imageRatio,
                 quality: formData.quality,
