@@ -301,12 +301,11 @@
 
     <script>
         let currentMode = 'keyword';
-        let generatingShorts = false;
 
         function setMode(mode) {
             currentMode = mode;
             document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            document.querySelector(`.mode-btn[onclick="setMode('${mode}')"]`).classList.add('active');
 
             if (mode === 'keyword') {
                 document.getElementById('keyword-group').classList.remove('hidden');
@@ -322,18 +321,12 @@
             document.getElementById('speedValue').textContent = speed + 'x';
         }
 
-        function showError(message) {
-            const container = document.getElementById('error-container');
-            container.innerHTML = `<div class="error-message">${message}</div>`;
+        function showAlert(message, type = 'error') {
+            const container = type === 'error' ? document.getElementById('error-container') : document.getElementById('success-container');
+            const className = type === 'error' ? 'error-message' : 'success-message';
+            container.innerHTML = `<div class="${className}">${message}</div>`;
             container.classList.remove('hidden');
-            setTimeout(() => container.classList.add('hidden'), 5000);
-        }
-
-        function showSuccess(message) {
-            const container = document.getElementById('success-container');
-            container.innerHTML = `<div class="success-message">${message}</div>`;
-            container.classList.remove('hidden');
-            setTimeout(() => container.classList.add('hidden'), 5000);
+            setTimeout(() => container.classList.add('hidden'), 3000);
         }
 
         function updateProgress(percentage, text) {
@@ -342,167 +335,108 @@
         }
 
         async function improveInput() {
-            const isKeyword = currentMode === 'keyword';
-            const inputEl = isKeyword ? document.getElementById('keyword') : document.getElementById('prompt');
-            const suggestionArea = isKeyword ? document.getElementById('improved-keyword-area') : document.getElementById('improved-prompt-area');
-            const suggestionText = isKeyword ? document.getElementById('improved-keyword-text') : document.getElementById('improved-prompt-text');
+            const inputEl = currentMode === 'keyword' ? document.getElementById('keyword') : document.getElementById('prompt');
+            const suggestionArea = document.getElementById('improved-keyword-area');
+            const suggestionText = document.getElementById('improved-keyword-text');
             
-            const input = inputEl.value;
-
-            if (!input.trim()) {
-                showError('입력 내용을 먼저 작성해주세요');
+            if (!inputEl.value.trim()) {
+                showAlert('개선할 내용을 먼저 입력해주세요.');
                 return;
             }
-
-            try {
-                showSuccess('AI가 입력 내용을 개선하고 있습니다...');
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                const improved = `${input}, (AI 추천: ${input}를 활용한 바이럴 영상 팁, 10대 타겟, 챌린지 아이디어)`;
-
-                suggestionText.textContent = improved;
-                suggestionArea.classList.remove('hidden');
-
-                showSuccess('입력 내용이 개선되었습니다!');
-            } catch (error) {
-                showError('개선 실패: ' + error.message);
-            }
+            
+            showAlert('AI가 입력 내용을 개선하고 있습니다...', 'success');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const improvedText = `${inputEl.value} (AI 제안: 바이럴, 10대 타겟, 챌린지)`;
+            suggestionText.textContent = improvedText;
+            suggestionArea.classList.remove('hidden');
         }
 
         async function generateShorts() {
-            if (generatingShorts) return;
-
-            const input = currentMode === 'keyword'
-                ? document.getElementById('keyword').value
-                : document.getElementById('prompt').value;
-
-            if (!input.trim()) {
-                showError(currentMode === 'keyword' ? '키워드를 입력해주세요' : '프롬프트를 입력해주세요');
+            const inputEl = currentMode === 'keyword' ? document.getElementById('keyword') : document.getElementById('prompt');
+            if (!inputEl.value.trim()) {
+                showAlert('키워드나 프롬프트를 입력해주세요.');
                 return;
             }
 
-            generatingShorts = true;
             const formData = {
-                mode: currentMode,
-                input: input,
-                duration: document.getElementById('duration').value,
+                input: inputEl.value,
                 sceneCount: document.getElementById('sceneCount').value,
-                imageStyle: document.getElementById('imageStyle').value,
-                ttsVoice: document.getElementById('ttsVoice').value,
-                ttsSpeed: document.getElementById('ttsSpeed').value
             };
 
-            // 로딩 표시
             document.getElementById('loading-container').classList.remove('hidden');
             document.getElementById('result-container').classList.add('hidden');
-            document.querySelector('.generate-btn').disabled = true;
-            document.querySelector('.generate-btn').textContent = '⏳ 생성 중...';
-
+            
             try {
-                updateProgress(10, '쇼츠 대본 생성 중...');
-                await new Promise(resolve => setTimeout(resolve, 1500));
-
-                updateProgress(30, '음성 파일 생성 중...');
-                await new Promise(resolve => setTimeout(resolve, 1500));
-
-                updateProgress(60, '장면 이미지 생성 중...');
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
-                updateProgress(90, '최종 조합 중...');
+                updateProgress(20, '대본 생성 중...');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                updateProgress(50, '음성 및 이미지 URL 생성 중...');
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
-                // 결과 생성 (데모 데이터)
-                const result = generateDemoResult(formData);
+                const result = createDemoResult(formData);
                 displayResult(result);
+                
+                updateProgress(100, '완료!');
+                document.getElementById('result-container').classList.remove('hidden');
+                showAlert('쇼츠 생성이 완료되었습니다.', 'success');
 
-                updateProgress(100, '✅ 쇼츠 생성 완료!');
-                showSuccess('쇼츠가 성공적으로 생성되었습니다!');
-
-            } catch (error) {
-                showError('쇼츠 생성 실패: ' + error.message);
+            } catch (e) {
+                showAlert('생성 중 오류가 발생했습니다: ' + e.message);
             } finally {
-                generatingShorts = false;
-                document.querySelector('.generate-btn').disabled = false;
-                document.querySelector('.generate-btn').textContent = '🎬 쇼츠 생성 시작';
-
-                setTimeout(() => {
-                    document.getElementById('loading-container').classList.add('hidden');
-                }, 2000);
+                document.getElementById('loading-container').classList.add('hidden');
             }
         }
 
-        function generateDemoResult(formData) {
-            const scenes = [];
-            const keywords = formData.input.split(',').map(k => k.trim()).filter(k => k);
-            
-            for (let i = 0; i < parseInt(formData.sceneCount); i++) {
-                // Use a keyword for each image, cycle if necessary
-                const keyword = keywords.length > 0 ? keywords[i % keywords.length] : 'random';
-                scenes.push({
+        function createDemoResult(formData) {
+            const keywords = formData.input.split(',').map(k => k.trim()).filter(Boolean);
+            const mainKeyword = keywords[0] || 'video';
+
+            // 1. 스크립트 생성
+            const script = `[장면 1]
+주목! ${mainKeyword}에 대한 놀라운 사실!
+
+[장면 2]
+많은 사람들이 모르는 ${mainKeyword}의 비밀, 지금 바로 공개합니다.
+
+[장면 3]
+이것만 알면 당신도 전문가!
+
+[장면 4]
+더 많은 팁을 원한다면 구독과 좋아요!`;
+
+            // 2. 이미지 URL 생성
+            const images = [];
+            for (let i = 0; i < formData.sceneCount; i++) {
+                const keyword = keywords[i % keywords.length] || mainKeyword;
+                images.push({
                     number: i + 1,
-                    // Using loremflickr for more stable keyword-based images
                     imageUrl: `https://loremflickr.com/400/600/${encodeURIComponent(keyword)}?lock=${Date.now() + i}`
                 });
             }
 
-            return {
-                script: generateDemoScript(formData),
-                // Using a real audio file placeholder
-                audioUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3',
-                images: scenes
-            };
-        }
+            // 3. 오디오 URL 생성
+            const audioUrl = 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3';
 
-        function generateDemoScript(formData) {
-            return `[장면 1]
-안녕하세요! 오늘은 ${formData.input}에 대한 이야기를 들려드릴게요.
-
-[장면 2]
-많은 분들이 궁금해하는 ${formData.input}의 비밀을 공개합니다!
-
-[장면 3]
-이런 멋진 경험을 놓치지 마세요!
-
-[장면 4]
-직접 확인하고 체험해보세요!
-
-[장면 5]
-여러분의 소중한 시간을 위해 준비했습니다. 감사합니다!`;
+            return { script, images, audioUrl };
         }
 
         function displayResult(result) {
             document.getElementById('script-result').textContent = result.script;
-
-            // 오디오 플레이어 설정 (데모)
-            const audioPlayer = document.getElementById('audio-player');
-            audioPlayer.src = result.audioUrl;
-
-            // 이미지 그리드 생성
+            document.getElementById('audio-player').src = result.audioUrl;
+            
             const imagesGrid = document.getElementById('images-grid');
             imagesGrid.innerHTML = '';
-
             result.images.forEach(scene => {
                 const sceneDiv = document.createElement('div');
                 sceneDiv.className = 'scene-image';
                 sceneDiv.innerHTML = `
                     <div class="scene-number">장면 ${scene.number}</div>
                     <img src="${scene.imageUrl}" alt="장면 ${scene.number}">
-                    <button class="regenerate-btn" onclick="regenerateImage(${scene.number - 1})">
-                        🔄 이미지 재생성
-                    </button>
                 `;
                 imagesGrid.appendChild(sceneDiv);
             });
-
-            document.getElementById('result-container').classList.remove('hidden');
         }
-
-        function regenerateImage(sceneIndex) {
-            showSuccess(`${sceneIndex + 1}번 장면 이미지를 재생성합니다...`);
-            // 여기에 이미지 재생성 API 호출 로직 추가
-        }
-
-        // 이벤트 리스너
-        document.getElementById('ttsSpeed').addEventListener('input', updateSpeedValue);
     </script>
 </body>
 </html>

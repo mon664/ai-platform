@@ -427,16 +427,19 @@
         }
 
         async function generateCharacterImage(formData) {
-            // 데모 캐릭터 생성
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            updateProgress(30, 'AI가 캐릭터 컨셉을 구상 중입니다...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
             
             const keywords = formData.prompt.split(' ').filter(k => k.length > 2);
-            const keyword = keywords.length > 0 ? keywords[0] : 'person';
+            const keyword = keywords[0] || 'person';
+
+            updateProgress(70, '캐릭터 이미지를 생성하고 있습니다...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
             const character = {
                 id: uuidv4(),
                 name: formData.characterName || 'AI 생성 캐릭터',
-                description: formData.prompt,
+                description: `"${formData.prompt}"라는 설명에 따라 생성된 캐릭터입니다. ${formData.imageStyle} 스타일이며, ${formData.tags}의 특징을 가집니다.`,
                 imageUrl: `https://loremflickr.com/500/500/${encodeURIComponent(keyword)}?lock=${Date.now()}`,
                 style: formData.imageStyle,
                 ratio: formData.imageRatio,
@@ -444,26 +447,7 @@
                 tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
                 createdAt: new Date().toISOString()
             };
-
-            // 저장 요청
-            try {
-                const response = await fetch('/api/character', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    character.id = result.id;
-                    character.imageUrl = result.imageUrl;
-                }
-            } catch (error) {
-                console.log('API 호출 실패, 데모 데이터 사용:', error);
-            }
-
+            
             currentCharacter = character;
             return character;
         }

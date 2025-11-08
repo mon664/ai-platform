@@ -406,10 +406,10 @@
         async function generateStoryScenes(formData) {
             const scenes = [];
             const sceneCount = parseInt(formData.sceneCount);
-            const keywords = formData.storyPrompt.split(' ').filter(k => k.length > 2); // Use words from prompt as keywords
+            const keywords = formData.storyPrompt.split(' ').filter(k => k.length > 2);
 
-            // 데모 스토리 장면 생성
-            const storyStructure = generateStoryStructure(formData.storyPrompt, sceneCount);
+            // 데모 스토리 구조 생성
+            const storyStructure = generateDemoStoryStructure(formData.storyPrompt, sceneCount);
 
             for (let i = 0; i < sceneCount; i++) {
                 const keyword = keywords.length > 0 ? keywords[i % keywords.length] : 'story';
@@ -422,12 +422,23 @@
                 };
                 scenes.push(scene);
 
-                // 진행 상황 업데이트
                 updateProgress(60 + (i / sceneCount) * 25, `장면 ${i + 1}/${sceneCount} 생성 중...`);
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
 
             return scenes;
+        }
+
+        function generateDemoStoryStructure(prompt, count) {
+            const structures = [];
+            const baseTitle = prompt.substring(0, 20) || "새로운 이야기";
+            for (let i = 0; i < count; i++) {
+                structures.push({
+                    title: `${baseTitle} - 파트 ${i + 1}`,
+                    description: `이것은 "${prompt}"에 대한 이야기의 ${i + 1}번째 장면의 상세한 설명입니다. 분위기는 극적이며, 다음 장면으로 이어지는 긴장감을 조성합니다.`
+                });
+            }
+            return structures;
         }
 
         function generateStoryStructure(prompt, sceneCount) {
