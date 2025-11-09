@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
+  // Handle CORS preflight request
+  if (req.method === 'OPTIONS') {
+    return new NextResponse(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
+    });
+  }
   // 인증 확인
   const auth = requireAuth(req);
   if (!auth.authorized) {
@@ -168,18 +179,40 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. 최종 결과 전송
-    return new NextResponse(JSON.stringify({
+    const result = {
+      success: true,
       script,
       images,
       imageErrors: imageErrors.length > 0 ? imageErrors : undefined,
       totalScenes: sceneCount,
       successfulImages: images.length
-    }), {
-      headers: { 'Content-Type': 'application/json' }
+    };
+
+    return new NextResponse(JSON.stringify(result), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
 
   } catch (error: any) {
-    console.error('Shorts generation error:', error);
-    return new NextResponse(JSON.stringify({ error: error.message || '오류가 발생했습니다' }), { status: 500 });
+    console.error('Shorts generation error:', {
+      message: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+
+    return new NextResponse(JSON.stringify({
+      success: false,
+      error: error.message || '오류가 발생했습니다',
+      timestamp: new Date().toISOString()
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
   }
 }

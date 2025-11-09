@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  # PostgreSQL 데이터베이스
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: erp_user
+      POSTGRES_PASSWORD: erp_pass
+      POSTGRES_DB: dolibarr_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Dolibarr ERP
+  dolibarr:
+    image: dolibarr/dolibarr:latest
+    environment:
+      DOLI_DB_HOST: postgres
+      DOLI_DB_USER: erp_user
+      DOLI_DB_PASSWORD: erp_pass
+      DOLI_DB_NAME: dolibarr_db
+      DOLI_ADMIN_LOGIN: admin
+      DOLI_ADMIN_PASSWORD: admin123
+      DOLI_URL_ROOT: http://localhost
+    ports:
+      - "80:80"
+    depends_on:
+      - postgres
+    volumes:
+      - dolibarr_data:/var/www/html
+
+volumes:
+  postgres_data:
+  dolibarr_data:

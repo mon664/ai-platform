@@ -1,10 +1,27 @@
 {
   "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
   "functions": {
     "app/api/**/*.ts": {
-      "maxDuration": 30
+      "maxDuration": 60,
+      "memory": 1024
     }
   },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
@@ -12,6 +29,18 @@
         {
           "key": "Cache-Control",
           "value": "no-store, must-revalidate"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
         }
       ]
     }
@@ -21,5 +50,8 @@
       "path": "/api/cron/auto-blog",
       "schedule": "0 0 * * *"
     }
-  ]
+  ],
+  "env": {
+    "NEXT_PUBLIC_APP_URL": "https://ai-platform-git-master-ggs-projects-fd033eb3.vercel.app"
+  }
 }

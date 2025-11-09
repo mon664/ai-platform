@@ -132,6 +132,21 @@ export default function Navigation() {
           >
             🔬 HACCP
           </Link>
+          <Link
+            href="/ai-cli"
+            style={{
+              color: pathname.startsWith('/ai-cli') ? '#4ade80' : '#9ca3af',
+              textDecoration: 'none',
+              fontWeight: pathname.startsWith('/ai-cli') ? 'bold' : 'normal',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              backgroundColor: pathname.startsWith('/ai-cli') ? '#064e3b' : 'transparent',
+              fontSize: '14px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            ⚡ AI CLI
+          </Link>
         </div>
       </div>
     </nav>
