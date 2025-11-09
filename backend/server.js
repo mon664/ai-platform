@@ -6,11 +6,13 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
-const axios = require('axios'); // axios 추가
-const googleTTS = require('google-tts-api'); // googleTTS 추가
+const axios = require('axios');
+const googleTTS = require('google-tts-api');
+const jwt = require('jsonwebtoken'); // JWT 추가
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key'; // JWT 비밀 키
 
 // Middleware
 app.use(cors());
@@ -557,8 +559,6 @@ app.post('/api/haccp-records', (req, res) => {
     );
 });
 
-// ... (기존 코드는 그대로 유지) ...
-
 // AI Chat Processing
 app.post('/api/chat', async (req, res) => {
     const { message } = req.body;
@@ -888,8 +888,6 @@ app.post('/api/upload-invoice', upload.single('invoice'), (req, res) => {
 
 const { exec } = require('child_process');
 
-// ... (기존 코드) ...
-
 // Cron Job for Auto-Blog
 app.get('/api/cron/auto-blog', (req, res) => {
     const token = req.query.token;
@@ -954,37 +952,73 @@ app.get('/api/analytics/dashboard', (req, res) => {
     });
 });
 
-// AI 쇼츠 생성 API
-app.post('/api/shorts', upload.none(), async (req, res) => { // 엔드포인트 이름 변경 및 upload.none() 미들웨어 추가
-    try {
-        const { keywords: keywordsJson, script, sceneCount } = req.body; // req.body로 FormData 접근
-        const keywords = JSON.parse(keywordsJson); // keywords는 JSON 문자열로 넘어오므로 파싱
+// --- Authentication Endpoint ---
+app.post('/api/auth/login', (req, res) => {
+    const { email, password } = req.body;
 
-        if (!keywords || !script || !sceneCount) {
-            return res.status(400).json({ error: 'Keywords, script, and sceneCount are required.' });
+    // Simple hardcoded check for demo purposes
+    if (email === 'admin@example.com' && password === 'admin123') {
+        const token = jwt.sign({ userId: 'admin', email: email }, JWT_SECRET, { expiresIn: '1h' });
+        return res.json({ success: true, token });
+    } else {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+});
+
+// Middleware to protect routes
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (token == null) return res.status(401).json({ error: 'Authentication token required' });
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ error: 'Invalid or expired token' });
+        req.user = user;
+        next();
+    });
+};
+
+// AI 쇼츠 생성 API (인증 필요)
+app.post('/api/shorts', authenticateToken, upload.none(), async (req, res) => {
+    try {
+        const { mode, input, duration, sceneCount, imageStyle } = req.body;
+
+        if (!input || !input.trim()) {
+            return res.status(400).json({ error: '입력 내용이 필요합니다.' });
         }
 
-        console.log('🎬 쇼츠 생성 시작:', { keywords, script, sceneCount });
+        console.log('🎬 쇼츠 생성 시작:', { mode, input, duration, sceneCount, imageStyle });
 
-        // 1. 이미지 URL 생성 (Unsplash)
+        // 1. 쇼츠 대본 생성
+        const script = await generateShortsScript(mode, input, duration, sceneCount);
+
+        // 2. 이미지 URL 생성 (Unsplash)
         const imagePromises = [];
+        const keywordsForImages = input.split(',').map(k => k.trim()).filter(Boolean);
         for (let i = 0; i < parseInt(sceneCount); i++) {
-            const keyword = keywords[i % keywords.length];
-            const unsplashUrl = `https://source.unsplash.com/400x600/?${encodeURIComponent(keyword)}`;
+            const keyword = keywordsForImages[i % keywordsForImages.length];
+            const unsplashUrl = `https://source.unsplash.com/400x600/?${encodeURIComponent(keyword)},${imageStyle}`;
             imagePromises.push(
                 axios.get(unsplashUrl, { maxRedirects: 5 }).then(response => response.request.res.responseUrl)
             );
         }
-        const imageUrls = await Promise.all(imagePromises);
+        const images = await Promise.all(imagePromises);
 
-        // 2. 음성 URL 생성 (Google TTS)
+        // 3. 음성 URL 생성 (Google TTS)
         const audioUrl = googleTTS.getAudioUrl(script, {
             lang: 'ko',
             slow: false,
             host: 'https://translate.google.com',
         });
 
-        res.json({ imageUrls, audioUrl });
+        res.json({
+            success: true,
+            script,
+            images, // imageUrls 대신 images로 이름 변경
+            audioUrl,
+            imageErrors: [] // 프론트엔드에서 기대하는 형식에 맞춤
+        });
 
     } catch (error) {
         console.error('쇼츠 생성 오류:', error);
@@ -993,7 +1027,7 @@ app.post('/api/shorts', upload.none(), async (req, res) => { // 엔드포인트 
 });
 
 // 입력 개선 API
-app.post('/api/shorts/improve', async (req, res) => {
+app.post('/api/shorts/improve', authenticateToken, async (req, res) => {
     try {
         const { input, mode } = req.body;
 
@@ -1013,7 +1047,7 @@ app.post('/api/shorts/improve', async (req, res) => {
 });
 
 // 이미지 재생성 API
-app.post('/api/shorts/regenerate', async (req, res) => {
+app.post('/api/shorts/regenerate', authenticateToken, async (req, res) => {
     try {
         const { shortsId, sceneIndex, imageStyle } = req.body;
 
@@ -1029,7 +1063,7 @@ app.post('/api/shorts/regenerate', async (req, res) => {
 });
 
 // 쇼츠 생성 결과 조회 API
-app.get('/api/shorts/:id', async (req, res) => {
+app.get('/api/shorts/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const result = await getShortsResult(id);
@@ -1047,7 +1081,7 @@ app.get('/api/shorts/:id', async (req, res) => {
 });
 
 // 쇼츠 생성 목록 API
-app.get('/api/shorts', async (req, res) => {
+app.get('/api/shorts', authenticateToken, async (req, res) => {
     try {
         const { limit = 10, offset = 0 } = req.query;
         const results = await getShortsList(parseInt(limit), parseInt(offset));

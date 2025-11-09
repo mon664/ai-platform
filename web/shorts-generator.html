@@ -172,275 +172,170 @@
     <!-- 통합 네비게이션 로드 -->
     <div id="navigation-container"></div>
 
+    <!-- 사용자님이 제공해주신 HTML 코드 시작 -->
     <div class="container mx-auto px-4">
         <header class="text-center my-8">
             <h1 class="text-4xl font-bold">🎬 AI 쇼츠 생성기</h1>
             <p class="text-lg text-gray-600 mt-2">AI가 자동으로 쇼츠 대본, 이미지, 음성을 생성합니다</p>
         </header>
 
-        <div class="shorts-container">
-            <div class="generator-form">
-                <h2 style="color: white; margin-bottom: 20px;" class="text-2xl font-bold text-center">쇼츠 생성 설정</h2>
+        <!-- 로그인 섹션 -->
+        <div id="loginSection" class="bg-gray-100 p-8 rounded-lg shadow-md max-w-md mx-auto my-10">
+            <h2 class="text-2xl font-bold mb-4 text-center">로그인</h2>
+            <input type="email" id="email" placeholder="이메일" value="admin@example.com" class="w-full p-3 mb-4 border border-gray-300 rounded-md">
+            <input type="password" id="password" placeholder="비밀번호" value="admin123" class="w-full p-3 mb-6 border border-gray-300 rounded-md">
+            <button onclick="login()" class="w-full bg-blue-500 text-white p-3 rounded-md hover:bg-blue-600">로그인</button>
+        </div>
 
-                <div class="mode-selector">
-                    <button class="mode-btn active" onclick="setMode('keyword')">키워드 모드</button>
-                    <button class="mode-btn" onclick="setMode('prompt')">프롬프트 모드</button>
-                </div>
+        <!-- 쇼츠 생성 섹션 -->
+        <div id="shortsSection" style="display:none;" class="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto my-10">
+            <h2 class="text-2xl font-bold mb-6 text-center">쇼츠 생성</h2>
+            
+            <div class="mb-4">
+                <label for="mode" class="block text-gray-700 text-sm font-bold mb-2">모드 선택:</label>
+                <select id="mode" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="keyword">키워드 모드</option>
+                    <option value="prompt">프롬프트 모드</option>
+                </select>
+            </div>
 
-                <div id="error-container" class="hidden"></div>
-                <div id="success-container" class="hidden"></div>
+            <div class="mb-4">
+                <label for="input" class="block text-gray-700 text-sm font-bold mb-2">입력 (키워드 또는 프롬프트):</label>
+                <input type="text" id="input" placeholder="키워드 또는 프롬프트" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
 
-                <div class="form-group" id="keyword-group">
-                    <label for="keyword">키워드 입력</label>
-                    <input type="text" id="keyword" placeholder="예: 외식업 홍보, 맛집 소개">
-                    <button class="improve-btn mt-2" onclick="improveInput()">AI로 키워드 개선</button>
-                    <div id="improved-keyword-area" class="mt-3 p-3 bg-gray-800 bg-opacity-50 rounded-lg hidden">
-                        <h4 class="text-sm font-semibold text-yellow-300 mb-2">✨ AI 개선 제안</h4>
-                        <p id="improved-keyword-text" class="text-white"></p>
-                    </div>
-                </div>
-
-                <div class="form-group hidden" id="prompt-group">
-                    <label for="prompt">프롬프트 입력</label>
-                    <textarea id="prompt" rows="4" placeholder="상세한 쇼츠 내용을 작성해주세요"></textarea>
-                    <button class="improve-btn mt-2" onclick="improveInput()">AI로 프롬프트 개선</button>
-                    <div id="improved-prompt-area" class="mt-3 p-3 bg-gray-800 bg-opacity-50 rounded-lg hidden">
-                        <h4 class="text-sm font-semibold text-yellow-300 mb-2">✨ AI 개선 제안</h4>
-                        <p id="improved-prompt-text" class="text-white"></p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label for="duration">영상 길이 (초)</label>
-                        <select id="duration">
-                            <option value="15">15초</option>
-                            <option value="30" selected>30초</option>
-                            <option value="60">60초</option>
-                            <option value="90">90초</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="sceneCount">장면 수</label>
-                        <select id="sceneCount">
-                            <option value="3">3개 장면</option>
-                            <option value="5" selected>5개 장면</option>
-                            <option value="8">8개 장면</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="imageStyle">이미지 스타일</label>
-                    <select id="imageStyle">
-                        <option value="photorealistic" selected>실사 사진</option>
-                        <option value="cartoon">만화 스타일</option>
-                        <option value="anime">애니메이션</option>
-                        <option value="3d">3D 렌더링</option>
-                        <option value="oil-painting">유화</option>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label for="duration" class="block text-gray-700 text-sm font-bold mb-2">영상 길이 (초):</label>
+                    <select id="duration" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <option value="30">30초</option>
+                        <option value="45">45초</option>
+                        <option value="60">60초</option>
                     </select>
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label for="ttsVoice">음성 목소리</label>
-                        <select id="ttsVoice">
-                            <option value="ko-KR-Neural2-A" selected>여성 1 (차분한 목소리)</option>
-                            <option value="ko-KR-Neural2-B">여성 2 (밝은 목소리)</option>
-                            <option value="ko-KR-Neural2-C">여성 3 (부드러운 목소리)</option>
-                            <option value="ko-KR-Wavenet-A">남성 1 (신뢰감 있는 목소리)</option>
-                            <option value="ko-KR-Wavenet-B">남성 2 (차분한 목소리)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="ttsSpeed">음성 속도 (<span id="speedValue">1.0x</span>)</label>
-                        <input type="range" id="ttsSpeed" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateSpeedValue()">
-                    </div>
-                </div>
-
-                <button class="generate-btn" onclick="generateShorts()">
-                    🎬 쇼츠 생성 시작
-                </button>
-            </div>
-
-            <div id="loading-container" class="result-container hidden">
-                <h3 class="text-xl font-bold mb-4">쇼츠 생성 중...</h3>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progress-fill"></div>
-                </div>
-                <p id="progress-text" class="text-center text-gray-600 mt-2">초기화 중...</p>
-            </div>
-
-            <div id="result-container" class="result-container hidden">
-                <h3 class="text-2xl font-bold mb-4">✅ 쇼츠 생성 완료!</h3>
-
-                <div class="mb-6">
-                    <h4 class="text-xl font-semibold mb-2">📜 생성된 대본</h4>
-                    <div class="script-result" id="script-result"></div>
-                </div>
-
-
-                <div class="mb-6">
-                    <h4 class="text-xl font-semibold mb-2">🎵 생성된 음성</h4>
-                    <div class="audio-player" id="audio-container">
-                        <audio controls id="audio-player" class="w-full"></audio>
-                    </div>
-                </div>
-
                 <div>
-                    <h4 class="text-xl font-semibold mb-2">🖼️ 생성된 장면 이미지</h4>
-                    <div class="images-grid" id="images-grid"></div>
+                    <label for="sceneCount" class="block text-gray-700 text-sm font-bold mb-2">장면 수:</label>
+                    <select id="sceneCount" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <option value="3">3장면</option>
+                        <option value="5">5장면</option>
+                        <option value="8">8장면</option>
+                    </select>
                 </div>
-
-                <div class="mt-6 flex gap-4">
-                    <button class="action-btn regenerate-btn w-full" onclick="generateShorts()">🔄 전체 재생성</button>
-                    <!-- <button class="action-btn download-btn w-full" onclick="downloadAll()">📦 전체 다운로드</button> -->
+                <div>
+                    <label for="imageStyle" class="block text-gray-700 text-sm font-bold mb-2">이미지 스타일:</label>
+                    <select id="imageStyle" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <option value="photorealistic">실사</option>
+                        <option value="anime">애니메이션</option>
+                        <option value="3d-render">3D 렌더</option>
+                        <option value="fantasy-art">판타지 아트</option>
+                        <option value="cinematic">영화처럼</option>
+                    </select>
                 </div>
             </div>
+
+            <button onclick="generateShorts()" class="w-full bg-green-500 text-white p-3 rounded-md hover:bg-green-600 mb-6">쇼츠 생성</button>
+            
+            <div id="result" class="mt-8 p-4 border border-gray-300 rounded-md"></div>
         </div>
     </div>
+    <!-- 사용자님이 제공해주신 HTML 코드 끝 -->
 
     <script>
-        let currentMode = 'keyword';
+    // API_BASE_URL 변수 추가 (개발 환경 및 배포 환경에 따라 변경)
+    const API_BASE_URL = window.location.origin; // 현재 도메인을 사용
 
-        function setMode(mode) {
-            currentMode = mode;
-            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelector(`.mode-btn[onclick="setMode('${mode}')"]`).classList.add('active');
-
-            if (mode === 'keyword') {
-                document.getElementById('keyword-group').classList.remove('hidden');
-                document.getElementById('prompt-group').classList.add('hidden');
-            } else {
-                document.getElementById('keyword-group').classList.add('hidden');
-                document.getElementById('prompt-group').classList.remove('hidden');
-            }
+    async function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          localStorage.setItem('authToken', data.token);
+          document.getElementById('loginSection').style.display = 'none';
+          document.getElementById('shortsSection').style.display = 'block';
+          alert('로그인 성공!');
+        } else {
+          alert('로그인 실패: ' + data.error);
+        }
+      } catch (error) {
+        alert('오류: ' + error.message);
+      }
+    }
+    
+    async function generateShorts() {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('로그인이 필요합니다');
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('mode', document.getElementById('mode').value);
+      formData.append('input', document.getElementById('input').value);
+      formData.append('duration', document.getElementById('duration').value);
+      formData.append('sceneCount', document.getElementById('sceneCount').value);
+      formData.append('imageStyle', document.getElementById('imageStyle').value);
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/shorts`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          alert('오류: ' + (error.error || '알 수 없는 오류'));
+          return;
+        }
+        
+        const data = await response.json();
+        
+        // 결과 표시
+        let html = '<h3>대본</h3><pre>' + data.script + '</pre>';
+        html += '<h3>생성된 이미지 (' + data.images.length + '개)</h3>';
+        data.images.forEach((img, i) => {
+          html += `<img src="${img}" style="max-width:200px; margin:5px;"><br>`;
+        });
+        
+        // 오디오 재생 추가
+        if (data.audioUrl) {
+            html += `<h3>생성된 음성</h3><audio controls src="${data.audioUrl}"></audio><br>`;
         }
 
-        function updateSpeedValue() {
-            const speed = document.getElementById('ttsSpeed').value;
-            document.getElementById('speedValue').textContent = speed + 'x';
+        if (data.imageErrors && data.imageErrors.length > 0) {
+          html += '<h3 style="color:red;">실패한 이미지</h3><ul>';
+          data.imageErrors.forEach(err => {
+            html += '<li>' + err + '</li>';
+          });
+          html += '</ul>';
         }
-
-        function showAlert(message, type = 'error') {
-            const container = type === 'error' ? document.getElementById('error-container') : document.getElementById('success-container');
-            const className = type === 'error' ? 'error-message' : 'success-message';
-            container.innerHTML = `<div class="${className}">${message}</div>`;
-            container.classList.remove('hidden');
-            setTimeout(() => container.classList.add('hidden'), 3000);
-        }
-
-        function updateProgress(percentage, text) {
-            document.getElementById('progress-fill').style.width = percentage + '%';
-            document.getElementById('progress-text').textContent = text;
-        }
-
-        async function improveInput() {
-            const inputEl = currentMode === 'keyword' ? document.getElementById('keyword') : document.getElementById('prompt');
-            const suggestionArea = document.getElementById('improved-keyword-area');
-            const suggestionText = document.getElementById('improved-keyword-text');
-            
-            if (!inputEl.value.trim()) {
-                showAlert('개선할 내용을 먼저 입력해주세요.');
-                return;
-            }
-            
-            showAlert('AI가 입력 내용을 개선하고 있습니다...', 'success');
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            const improvedText = `${inputEl.value} (AI 제안: 바이럴, 10대 타겟, 챌린지)`;
-            suggestionText.textContent = improvedText;
-            suggestionArea.classList.remove('hidden');
-        }
-
-        async function generateShorts() {
-            const inputEl = currentMode === 'keyword' ? document.getElementById('keyword') : document.getElementById('prompt');
-            if (!inputEl.value.trim()) {
-                showAlert('키워드나 프롬프트를 입력해주세요.');
-                return;
-            }
-
-            const sceneCount = parseInt(document.getElementById('sceneCount').value);
-            const keywords = inputEl.value.split(',').map(k => k.trim()).filter(Boolean);
-            const script = createDemoScript(inputEl.value); // 임시 스크립트 생성 (백엔드에서 실제 스크립트 생성 예정)
-
-            document.getElementById('loading-container').classList.remove('hidden');
-            document.getElementById('result-container').classList.add('hidden');
-            
-            try {
-                updateProgress(20, '대본 생성 중...');
-                // 백엔드에서 스크립트 생성 로직이 없으므로, 프론트엔드에서 임시 스크립트 사용
-                document.getElementById('script-result').textContent = script; 
-                
-                updateProgress(50, '백엔드에 이미지 및 음성 생성 요청 중...');
-                
-                const formData = new FormData();
-                formData.append('keywords', JSON.stringify(keywords));
-                formData.append('script', script); // 임시 스크립트 전송
-                formData.append('sceneCount', sceneCount);
-
-                const response = await fetch('/api/shorts', { // 엔드포인트 변경
-                    method: 'POST',
-                    body: formData, // FormData 전송
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`서버 오류: ${response.status} - ${errorData.error || response.statusText}`);
-                }
-
-                const result = await response.json();
-                
-                updateProgress(100, '완료!');
-                displayResult(result, script); // 백엔드에서 스크립트를 반환하지 않으므로, 프론트엔드에서 생성한 스크립트 사용
-                document.getElementById('result-container').classList.remove('hidden');
-                showAlert('쇼츠 생성이 완료되었습니다.', 'success');
-
-            } catch (e) {
-                showAlert('생성 중 오류가 발생했습니다: ' + e.message);
-            } finally {
-                document.getElementById('loading-container').classList.add('hidden');
-            }
-        }
-
-        function createDemoScript(input) {
-            const mainKeyword = input.split(',')[0].trim() || "새로운 주제";
-            return `[장면 1]
-주목! ${mainKeyword}에 대한 놀라운 사실!
-
-[장면 2]
-많은 사람들이 모르는 ${mainKeyword}의 비밀, 지금 바로 공개합니다.
-
-[장면 3]
-이것만 알면 당신도 전문가!
-
-[장면 4]
-더 많은 팁을 원한다면 구독과 좋아요!`;
-        }
-
-        function displayResult(result, script) {
-            document.getElementById('script-result').textContent = script;
-            document.getElementById('audio-player').src = result.audioUrl;
-            
-            const imagesGrid = document.getElementById('images-grid');
-            imagesGrid.innerHTML = '';
-            result.imageUrls.forEach((imageUrl, index) => {
-                const sceneDiv = document.createElement('div');
-                sceneDiv.className = 'scene-image';
-                sceneDiv.innerHTML = `
-                    <div class="scene-number">장면 ${index + 1}</div>
-                    <img src="${imageUrl}" alt="장면 ${index + 1}">
-                `; // 재생성 버튼 제거
-                imagesGrid.appendChild(sceneDiv);
-            });
-        }
-
-        // regenerateScene 함수 제거
-        // downloadAll 함수는 주석 처리된 버튼과 함께 제거
-
-    </script>
+        
+        document.getElementById('result').innerHTML = html;
+      } catch (error) {
+        alert('오류: ' + error.message);
+      }
+    }
+    
+    // 페이지 로드 시 토큰 확인
+    window.onload = function() {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('shortsSection').style.display = 'block';
+      }
+    };
+  </script>
     <!-- 네비게이션 로드 스크립트 -->
     <script src="script.js"></script>
 </body>
