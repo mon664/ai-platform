@@ -954,29 +954,42 @@ app.get('/api/analytics/dashboard', (req, res) => {
 
 // --- Authentication Endpoint ---
 app.post('/api/auth/login', (req, res) => {
-    const { email, password } = req.body;
+    try {
+        const { email, password } = req.body;
 
-    // Simple hardcoded check for demo purposes
-    if (email === 'admin@example.com' && password === 'admin123') {
-        const token = jwt.sign({ userId: 'admin', email: email }, JWT_SECRET, { expiresIn: '1h' });
-        return res.json({ success: true, token });
-    } else {
-        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+        // Simple hardcoded check for demo purposes
+        if (email === 'admin@example.com' && password === 'admin123') {
+            const token = jwt.sign({ userId: 'admin', email: email }, JWT_SECRET, { expiresIn: '1h' });
+            return res.json({ success: true, token });
+        } else {
+            return res.status(401).json({ success: false, error: 'Invalid credentials' });
+        }
+    } catch (error) {
+        console.error('Login API Error:', error);
+        res.status(500).json({ success: false, error: 'Login failed due to server error.' });
     }
 });
 
 // Middleware to protect routes
 const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    try {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
 
-    if (token == null) return res.status(401).json({ error: 'Authentication token required' });
+        if (token == null) return res.status(401).json({ error: 'Authentication token required' });
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ error: 'Invalid or expired token' });
-        req.user = user;
-        next();
-    });
+        jwt.verify(token, JWT_SECRET, (err, user) => {
+            if (err) {
+                console.error('JWT Verification Error:', err);
+                return res.status(403).json({ error: 'Invalid or expired token' });
+            }
+            req.user = user;
+            next();
+        });
+    } catch (error) {
+        console.error('Authentication Middleware Error:', error);
+        res.status(500).json({ error: 'Authentication failed due to server error.' });
+    }
 };
 
 // AI 쇼츠 생성 API (인증 필요)
@@ -1265,7 +1278,7 @@ app.post('/api/generate/regenerate', async (req, res) => {
         const { storyId, sceneIndex, storyPrompt, imageStyle, mood } = req.body;
 
         // 특정 장면 재생성
-        const newImageUrl = await regenerateStoryScene(sceneIndex, storyPrompt, imageStyle, mood);
+        const newImageUrl = await regenerateSceneImage(sceneIndex, storyPrompt, imageStyle, mood);
 
         res.json({ imageUrl: newImageUrl, sceneIndex });
 
@@ -1375,7 +1388,7 @@ function generateStoryStructure(prompt, sceneCount) {
 async function regenerateStoryScene(sceneIndex, storyPrompt, imageStyle, mood) {
     // 새로운 장면 이미지 생성
     await new Promise(resolve => setTimeout(resolve, 1000));
-    return `https://picsum.photos/seed/regen_story_${Date.now()}_${sceneIndex}/400/600.jpg`;
+    return `https://picsum.photos/seed/regen_${Date.now()}_${sceneIndex}/400/600.jpg`;
 }
 
 async function saveStoryResult(id, result) {
