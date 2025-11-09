@@ -36,3 +36,14 @@ export function useAuth(): AuthState {
     error: null
   };
 }
+
+// fetchWithAuth 함수 추가
+export async function fetchWithAuth(url: string, options?: RequestInit): Promise<Response> {
+  const token = localStorage.getItem('authToken'); // shorts-generator.html에서 사용하는 토큰 이름
+  const headers = {
+    ...options?.headers,
+    'Authorization': token ? `Bearer ${token}` : ''
+  };
+
+  return fetch(url, { ...options, headers });
+}
