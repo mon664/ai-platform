@@ -6,6 +6,8 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
+const axios = require('axios'); // axios 추가
+const googleTTS = require('google-tts-api'); // googleTTS 추가
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -555,9 +557,6 @@ app.post('/api/haccp-records', (req, res) => {
     );
 });
 
-const axios = require('axios');
-const googleTTS = require('google-tts-api');
-
 // ... (기존 코드는 그대로 유지) ...
 
 // AI Chat Processing
@@ -956,48 +955,36 @@ app.get('/api/analytics/dashboard', (req, res) => {
 });
 
 // AI 쇼츠 생성 API
-app.post('/api/shorts/generate', upload.single('protagonistImage'), async (req, res) => {
+app.post('/api/shorts', upload.none(), async (req, res) => { // 엔드포인트 이름 변경 및 upload.none() 미들웨어 추가
     try {
-        const { mode, input, duration, sceneCount, imageStyle, ttsVoice, ttsSpeed } = req.body;
+        const { keywords: keywordsJson, script, sceneCount } = req.body; // req.body로 FormData 접근
+        const keywords = JSON.parse(keywordsJson); // keywords는 JSON 문자열로 넘어오므로 파싱
 
-        if (!input || !input.trim()) {
-            return res.status(400).json({ error: '입력 내용이 필요합니다.' });
+        if (!keywords || !script || !sceneCount) {
+            return res.status(400).json({ error: 'Keywords, script, and sceneCount are required.' });
         }
 
-        console.log('🎬 쇼츠 생성 시작:', { mode, input, duration, sceneCount });
+        console.log('🎬 쇼츠 생성 시작:', { keywords, script, sceneCount });
 
-        // 쇼츠 대본 생성
-        const script = await generateShortsScript(mode, input, duration, sceneCount);
+        // 1. 이미지 URL 생성 (Unsplash)
+        const imagePromises = [];
+        for (let i = 0; i < parseInt(sceneCount); i++) {
+            const keyword = keywords[i % keywords.length];
+            const unsplashUrl = `https://source.unsplash.com/400x600/?${encodeURIComponent(keyword)}`;
+            imagePromises.push(
+                axios.get(unsplashUrl, { maxRedirects: 5 }).then(response => response.request.res.responseUrl)
+            );
+        }
+        const imageUrls = await Promise.all(imagePromises);
 
-        // 음성 파일 생성 (데모에서는 URL만 반환)
-        const audioUrl = await generateShortsAudio(script, ttsVoice, ttsSpeed);
-
-        // 장면 이미지 생성
-        const images = await generateSceneImages(script, sceneCount, imageStyle, req.file);
-
-        // 결과 저장
-        const shortsId = uuidv4();
-        await saveShortsResult(shortsId, {
-            mode,
-            input,
-            duration,
-            sceneCount,
-            imageStyle,
-            script,
-            audioUrl,
-            images,
-            createdAt: new Date().toISOString()
+        // 2. 음성 URL 생성 (Google TTS)
+        const audioUrl = googleTTS.getAudioUrl(script, {
+            lang: 'ko',
+            slow: false,
+            host: 'https://translate.google.com',
         });
 
-        res.json({
-            success: true,
-            id: shortsId,
-            script,
-            audioUrl,
-            images,
-            totalScenes: parseInt(sceneCount),
-            successfulImages: images.length
-        });
+        res.json({ imageUrls, audioUrl });
 
     } catch (error) {
         console.error('쇼츠 생성 오류:', error);
@@ -1448,13 +1435,13 @@ app.get('/api/character/history', async (req, res) => {
 app.get('/api/character/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const character = await getCharacterById(id);
+        const result = await getCharacterById(id);
 
-        if (!character) {
+        if (!result) {
             return res.status(404).json({ error: '캐릭터를 찾을 수 없습니다.' });
         }
 
-        res.json(character);
+        res.json(result);
 
     } catch (error) {
         console.error('캐릭터 조회 오류:', error);
@@ -1572,174 +1559,6 @@ async function deleteCharacter(id) {
         });
     });
 }
-
-// Shorts Generation API
-app.post('/api/generate-shorts', async (req, res) => {
-    try {
-        const { keywords, script, sceneCount } = req.body;
-
-        // 간단한 더미 응답 (실제로는 AI API 호출 필요)
-        const mockResponse = {
-            success: true,
-            data: {
-                script: script || "생성된 스크립트입니다.",
-                scenes: Array.from({ length: sceneCount || 5 }, (_, i) => ({
-                    scene: i + 1,
-                    description: `장면 ${i + 1}의 설명입니다.`,
-                    image_url: `https://picsum.photos/seed/scene${i + 1}/400/300.jpg`,
-                    audio_url: `https://example.com/audio/scene${i + 1}.mp3`
-                })),
-                video_url: "https://example.com/generated-short.mp4",
-                thumbnail_url: "https://picsum.photos/seed/thumbnail/400/300.jpg"
-            }
-        };
-
-        res.json(mockResponse);
-    } catch (error) {
-        console.error('Shorts generation error:', error);
-        res.status(500).json({
-            success: false,
-            error: '쇼츠 생성 중 오류가 발생했습니다.'
-        });
-    }
-});
-
-// AI Chat API
-app.post('/api/chat', async (req, res) => {
-    try {
-        const { message, model = 'gpt-3.5-turbo', history = [] } = req.body;
-
-        // 간단한 응답 생성 (실제로는 AI API 호출)
-        const responses = [
-            "안녕하세요! 무엇을 도와드릴까요?",
-            "흥미로운 질문입니다. 더 자세히 설명해주시겠어요?",
-            "좋은 질문입니다. 다음과 같이 생각해볼 수 있습니다...",
-            "이해했습니다. 추가적으로 궁금한 점이 있으신가요?",
-            "훌륭한 질문입니다. 최선을 다해 답변해드리겠습니다."
-        ];
-
-        const mockResponse = {
-            success: true,
-            response: responses[Math.floor(Math.random() * responses.length)],
-            model: model,
-            timestamp: new Date().toISOString()
-        };
-
-        res.json(mockResponse);
-    } catch (error) {
-        console.error('Chat API error:', error);
-        res.status(500).json({
-            success: false,
-            error: '챗봇 응답 중 오류가 발생했습니다.'
-        });
-    }
-});
-
-// YouTube Shorts Generator API
-app.post('/api/youtube-shorts', async (req, res) => {
-    try {
-        const { category, keywords, targetAudience, duration, tone, seoOptimization } = req.body;
-
-        // 유튜브 쇼츠 생성을 위한 더미 응답
-        const mockResponse = {
-            success: true,
-            data: {
-                title: `${keywords}에 대한 완벽한 가이드 - ${category}`,
-                script: `
-# ${keywords}에 대한 완벽한 가이드
-
-## 3초 훅
-잠깐만요! 이거 알아요?
-
-## 본문 (4-45초)
-오늘은 여러분께 정말 놀라운 방법을 알려드릴 거예요.
-
-## 클로징 (46-60초)
-지금 바로 구독하고 알림 설정을 눌러주세요!
-                `.trim(),
-                hook: "잠깐만요! 이거 알아요?",
-                cta: "지금 바로 구독하고 알림 설정을 눌러주세요!",
-                viralScore: Math.floor(Math.random() * 30) + 70, // 70-100
-                seoScore: Math.floor(Math.random() * 20) + 80, // 80-100
-                estimatedViews: Math.floor(Math.random() * 900000) + 100000, // 100K-1M
-                tags: [keywords, category, '인기', '트렌드', '유용한정보'].filter(Boolean),
-                thumbnail: `https://picsum.photos/seed/${keywords}/1280/720.jpg`,
-                duration: duration
-            }
-        };
-
-        res.json(mockResponse);
-    } catch (error) {
-        console.error('YouTube Shorts API error:', error);
-        res.status(500).json({
-            success: false,
-            error: '유튜브 쇼츠 생성 중 오류가 발생했습니다.'
-        });
-    }
-});
-
-// Advanced Blog Generator API
-app.post('/api/advanced-blog', async (req, res) => {
-    try {
-        const { template, mainKeyword, relatedKeywords, targetAudience, contentLength, tone, seoOptimization } = req.body;
-
-        // 블로그 생성을 위한 더미 응답
-        const mockResponse = {
-            success: true,
-            data: {
-                title: `${mainKeyword}: 완벽한 가이드 2024`,
-                slug: `${mainKeyword.toLowerCase().replace(/\s+/g, '-')}-complete-guide`,
-                content: `
-# ${mainKeyword}에 대한 완벽한 가이드
-
-## 서론: 왜 ${mainKeyword}가 중요한가?
-
-현대 사회에서 ${mainKeyword}는 단순한 선택이 아닌 필수적인 요소가 되었습니다.
-
-## 본문
-
-### 1단계: 기초 다지기
-가장 먼저 기본 개념을 이해하는 것이 중요합니다.
-
-### 2단계: 실전 적용
-이론을 실제에 적용해보는 단계입니다.
-
-### 3단계: 전문가 수준
-지속적인 연습과 학습을 통해 전문가 수준에 도달할 수 있습니다.
-
-## 결론
-
-이 가이드를 따르면 ${mainKeyword} 분야에서 눈에 띄는 성과를 얻을 수 있을 것입니다.
-                `.trim(),
-                excerpt: `${mainKeyword}에 대한 모든 것을 알려드립니다. 초보자도 쉽게 따라할 수 있는 상세 가이드!`,
-                metaTitle: `${mainKeyword}: 완벽한 가이드 2024 | 전문가 조언`,
-                metaDescription: `${mainKeyword}에 대한 모든 것을 알려드립니다. 초보자도 쉽게 따라할 수 있는 상세 가이드!`,
-                seoScore: Math.floor(Math.random() * 20) + 80, // 80-100
-                wordCount: Math.floor(Math.random() * 1000) + 1500, // 1500-2500
-                readingTime: Math.floor(Math.random() * 5) + 5, // 5-10 minutes
-                outline: [
-                    { title: '서론: 문제 제기', description: '독자가 공감할 만한 문제 상황 설명' },
-                    { title: '해결책 소개', description: '이 글에서 다룰 해결책 간략 소개' },
-                    { title: '단계별 가이드', description: '상세한 실행 단계별 설명' },
-                    { title: '결론: 기대효과', description: '예상되는 결과와 장점' }
-                ],
-                suggestedKeywords: [mainKeyword, ...relatedKeywords.split(',').map(k => k.trim()).filter(k => k), '가이드', '방법', '팁'],
-                internalLinks: [
-                    { title: `관련 가이드: ${relatedKeywords.split(',')[0]?.trim() || '추가 정보'}`, url: '#' },
-                    { title: '성공 사례 모음', url: '#' }
-                ]
-            }
-        };
-
-        res.json(mockResponse);
-    } catch (error) {
-        console.error('Advanced Blog API error:', error);
-        res.status(500).json({
-            success: false,
-            error: '고급 블로그 생성 중 오류가 발생했습니다.'
-        });
-    }
-});
 
 // Start server
 initializeDatabase();

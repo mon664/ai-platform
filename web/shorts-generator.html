@@ -283,7 +283,7 @@
 
 
                 <div class="mb-6">
-                    <h4 class="text-xl font-semibold mb-2">🎵 생성된 음성 (데모)</h4>
+                    <h4 class="text-xl font-semibold mb-2">🎵 생성된 음성</h4>
                     <div class="audio-player" id="audio-container">
                         <audio controls id="audio-player" class="w-full"></audio>
                     </div>
@@ -296,7 +296,7 @@
 
                 <div class="mt-6 flex gap-4">
                     <button class="action-btn regenerate-btn w-full" onclick="generateShorts()">🔄 전체 재생성</button>
-                    <button class="action-btn download-btn w-full" onclick="downloadAll()">📦 전체 다운로드</button>
+                    <!-- <button class="action-btn download-btn w-full" onclick="downloadAll()">📦 전체 다운로드</button> -->
                 </div>
             </div>
         </div>
@@ -363,31 +363,38 @@
             }
 
             const sceneCount = parseInt(document.getElementById('sceneCount').value);
-            const script = createDemoScript(inputEl.value); // Script is still generated locally
             const keywords = inputEl.value.split(',').map(k => k.trim()).filter(Boolean);
+            const script = createDemoScript(inputEl.value); // 임시 스크립트 생성 (백엔드에서 실제 스크립트 생성 예정)
 
             document.getElementById('loading-container').classList.remove('hidden');
             document.getElementById('result-container').classList.add('hidden');
             
             try {
                 updateProgress(20, '대본 생성 중...');
-                document.getElementById('script-result').textContent = script;
+                // 백엔드에서 스크립트 생성 로직이 없으므로, 프론트엔드에서 임시 스크립트 사용
+                document.getElementById('script-result').textContent = script; 
                 
                 updateProgress(50, '백엔드에 이미지 및 음성 생성 요청 중...');
-                const response = await fetch('/api/generate-shorts', {
+                
+                const formData = new FormData();
+                formData.append('keywords', JSON.stringify(keywords));
+                formData.append('script', script); // 임시 스크립트 전송
+                formData.append('sceneCount', sceneCount);
+
+                const response = await fetch('/api/shorts', { // 엔드포인트 변경
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ keywords, script, sceneCount }),
+                    body: formData, // FormData 전송
                 });
 
                 if (!response.ok) {
-                    throw new Error(`서버 오류: ${response.statusText}`);
+                    const errorData = await response.json();
+                    throw new Error(`서버 오류: ${response.status} - ${errorData.error || response.statusText}`);
                 }
 
                 const result = await response.json();
                 
                 updateProgress(100, '완료!');
-                displayResult(result, script); // Pass script to displayResult
+                displayResult(result, script); // 백엔드에서 스크립트를 반환하지 않으므로, 프론트엔드에서 생성한 스크립트 사용
                 document.getElementById('result-container').classList.remove('hidden');
                 showAlert('쇼츠 생성이 완료되었습니다.', 'success');
 
@@ -425,24 +432,14 @@
                 sceneDiv.innerHTML = `
                     <div class="scene-number">장면 ${index + 1}</div>
                     <img src="${imageUrl}" alt="장면 ${index + 1}">
-                    <button class="regenerate-btn" onclick="regenerateScene(${index + 1})">🔄</button>
-                `;
+                `; // 재생성 버튼 제거
                 imagesGrid.appendChild(sceneDiv);
             });
         }
 
-        function regenerateScene(sceneNumber) {
-            showAlert(`${sceneNumber}번 장면을 재생성합니다 (데모).`);
-            const imageEl = document.querySelector(`.scene-image:nth-child(${sceneNumber}) img`);
-            const currentSrc = new URL(imageEl.src);
-            const keyword = currentSrc.searchParams.get('text');
-            // Add a random value to bust cache and get a new image
-            imageEl.src = `https://dummyimage.com/400x600/cccccc/000000.png&text=${keyword}&rand=${Math.random()}`;
-        }
+        // regenerateScene 함수 제거
+        // downloadAll 함수는 주석 처리된 버튼과 함께 제거
 
-        function downloadAll() {
-            showAlert('전체 다운로드 기능은 현재 개발 중입니다.');
-        }
     </script>
     <!-- 네비게이션 로드 스크립트 -->
     <script src="script.js"></script>

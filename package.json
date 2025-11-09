@@ -1,0 +1,32 @@
+{
+  "name": "ai-unified-platform",
+  "version": "2.0.0",
+  "description": "AI 통합 관리 플랫폼 - Ultimate AI Suite",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "backend:dev": "cd backend && npm run dev",
+    "backend:start": "cd backend && npm start"
+  },
+  "dependencies": {
+    "next": "14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "axios": "^1.6.0",
+    "marked": "^9.1.2",
+    "react-quill-new": "^0.1.3",
+    "@types/node": "^20.8.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.2.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.52.0",
+    "eslint-config-next": "14.0.0",
+    "@types/marked": "^5.0.1"
+  }
+}

@@ -3,28 +3,663 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 자동 블로그 생성기 - AI 통합 관리 플랫폼</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <title>🤖 자동 블로그 - AI 통합 관리 플랫폼</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .ql-container {
+            min-height: 300px;
+        }
+        .cost-indicator {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50">
     <!-- 통합 네비게이션 로드 -->
     <div id="navigation-container"></div>
 
-    <div class="container mx-auto mt-10 px-4">
-        <div class="bg-white rounded-lg shadow-lg p-8 text-center">
-            <h1 class="text-4xl font-bold text-gray-800 mb-4">🤖 자동 블로그</h1>
-            <p class="text-xl text-gray-600 mb-6">이 기능은 현재 개발 중입니다.</p>
-            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
-                <p class="font-bold">준비 중</p>
-                <p>자동으로 블로그를 생성하고 포스팅하는 기능이 곧 추가될 예정입니다. 백엔드의 Cron Job 설정은 완료되었습니다.</p>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 헤더 -->
+        <div class="gradient-bg rounded-xl shadow-xl p-8 mb-8 text-white">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold mb-3">🤖 자동 블로그 생성기</h1>
+                <p class="text-xl opacity-90">AI가 자동으로 블로그 콘텐츠를 생성하고 관리합니다</p>
             </div>
-            <a href="../index.html" class="mt-8 inline-block bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors">
-                메인으로 돌아가기
-            </a>
+        </div>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 왼쪽: 설정 패널 -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover mb-6">
+                    <h3 class="text-xl font-bold mb-4">📝 블로그 설정</h3>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">블로그 제목</label>
+                            <input
+                                type="text"
+                                id="blogTitle"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                placeholder="블로그 제목을 입력하세요"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
+                            <select id="category" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="marketing">마케팅</option>
+                                <option value="tech">기술</option>
+                                <option value="lifestyle">라이프스타일</option>
+                                <option value="business">비즈니스</option>
+                                <option value="education">교육</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">생성 모드</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="radio" name="mode" value="keywords" checked class="mr-2">
+                                    <span>키워드 기반</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="mode" value="prompt" class="mr-2">
+                                    <span>프롬프트 기반</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="keywordsSection">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">키워드</label>
+                            <input
+                                type="text"
+                                id="keywords"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                placeholder="예: AI, 마케팅, 성장"
+                            >
+                        </div>
+
+                        <div id="promptSection" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">프롬프트</label>
+                            <textarea
+                                id="prompt"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                rows="4"
+                                placeholder="생성할 블로그 내용에 대한 프롬프트를 입력하세요"
+                            ></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">텍스트 모델</label>
+                            <select id="textModel" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="gemini-1.0-flash">Gemini 1.0 Flash</option>
+                                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                <option value="gpt-4">GPT-4</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">목표 토큰 수</label>
+                            <input
+                                type="number"
+                                id="targetTokens"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                                value="1200"
+                                min="500"
+                                max="5000"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">이미지 생성 수</label>
+                            <input
+                                type="number"
+                                id="imageCount"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                                value="3"
+                                min="0"
+                                max="10"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="enableFinishing" class="mr-2">
+                                <span>후가공 처리 활성화</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 비용 표시 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover">
+                    <h4 class="text-lg font-bold mb-3">💰 예상 비용</h4>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span>텍스트 생성:</span>
+                            <span id="textCost" class="font-semibold">$0.00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>이미지 생성:</span>
+                            <span id="imageCost" class="font-semibold">$0.00</span>
+                        </div>
+                        <div class="border-t pt-2">
+                            <div class="flex justify-between font-bold">
+                                <span>총합:</span>
+                                <span id="totalCost" class="text-blue-600">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 생성 버튼 -->
+                <button id="generateBtn" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-xl font-bold text-lg hover:shadow-xl transition mt-6">
+                    <i class="fas fa-magic mr-2"></i>블로그 생성하기
+                </button>
+            </div>
+
+            <!-- 중앙: 결과 패널 -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-2xl font-bold">📄 생성 결과</h3>
+                        <div id="statusIndicator" class="hidden">
+                            <span class="loading-spinner inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full mr-2"></span>
+                            <span id="statusText">생성 중...</span>
+                        </div>
+                    </div>
+
+                    <!-- 로딩 상태 -->
+                    <div id="loadingState" class="hidden">
+                        <div class="text-center py-12">
+                            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                            <p class="mt-4 text-gray-600">AI가 블로그 콘텐츠를 생성하고 있습니다...</p>
+                        </div>
+                    </div>
+
+                    <!-- 결과 표시 -->
+                    <div id="resultDisplay" class="hidden">
+                        <!-- 제목 편집 -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">블로그 제목</label>
+                            <input
+                                type="text"
+                                id="editTitle"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            >
+                        </div>
+
+                        <!-- 내용 편집 -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">블로그 내용</label>
+                            <div id="editor" style="height: 400px;"></div>
+                        </div>
+
+                        <!-- 이미지 -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">생성된 이미지</label>
+                            <div id="generatedImages" class="grid grid-cols-3 gap-4">
+                                <!-- 이미지가 여기에 표시됨 -->
+                            </div>
+                        </div>
+
+                        <!-- 작업 버튼 -->
+                        <div class="flex space-x-3">
+                            <button id="previewBtn" class="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
+                                <i class="fas fa-eye mr-2"></i>미리보기
+                            </button>
+                            <button id="saveBtn" class="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
+                                <i class="fas fa-save mr-2"></i>저장
+                            </button>
+                            <button id="publishBtn" class="flex-1 bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition">
+                                <i class="fas fa-upload mr-2"></i>게시
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 초기 상태 -->
+                    <div id="initialState">
+                        <div class="text-center py-12 text-gray-500">
+                            <i class="fas fa-blog text-6xl mb-4"></i>
+                            <p>블로그 생성 버튼을 눌러 시작하세요</p>
+                        </div>
+                    </div>
+
+                    <!-- 미리보기 모달 -->
+                    <div id="previewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                        <div class="bg-white rounded-xl max-w-4xl w-full max-h-screen overflow-y-auto p-8">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-2xl font-bold">📖 블로그 미리보기</h3>
+                                <button id="closePreview" class="text-gray-500 hover:text-gray-700">
+                                    <i class="fas fa-times text-xl"></i>
+                                </button>
+                            </div>
+                            <div id="previewContent" class="prose max-w-none">
+                                <!-- 미리보기 내용이 여기에 표시됨 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 히스토리 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover mt-6">
+                    <h3 class="text-xl font-bold mb-4">📚 생성 히스토리</h3>
+                    <div id="historyList" class="space-y-3">
+                        <div class="text-center py-8 text-gray-500">
+                            <p>생성 히스토리가 없습니다</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- 네비게이션 로드 스크립트 -->
     <script src="../script.js"></script>
+
+    <script>
+        // 자동 블로그 생성기 클래스
+        class AutoBlogGenerator {
+            constructor() {
+                this.quill = null;
+                this.history = [];
+                this.currentResult = null;
+                this.initializeElements();
+                this.initializeEditor();
+                this.bindEvents();
+                this.loadHistory();
+            }
+
+            initializeElements() {
+                this.elements = {
+                    blogTitle: document.getElementById('blogTitle'),
+                    category: document.getElementById('category'),
+                    keywords: document.getElementById('keywords'),
+                    prompt: document.getElementById('prompt'),
+                    textModel: document.getElementById('textModel'),
+                    targetTokens: document.getElementById('targetTokens'),
+                    imageCount: document.getElementById('imageCount'),
+                    enableFinishing: document.getElementById('enableFinishing'),
+                    generateBtn: document.getElementById('generateBtn'),
+                    loadingState: document.getElementById('loadingState'),
+                    resultDisplay: document.getElementById('resultDisplay'),
+                    initialState: document.getElementById('initialState'),
+                    statusIndicator: document.getElementById('statusIndicator'),
+                    statusText: document.getElementById('statusText'),
+                    editTitle: document.getElementById('editTitle'),
+                    generatedImages: document.getElementById('generatedImages'),
+                    previewBtn: document.getElementById('previewBtn'),
+                    saveBtn: document.getElementById('saveBtn'),
+                    publishBtn: document.getElementById('publishBtn'),
+                    previewModal: document.getElementById('previewModal'),
+                    previewContent: document.getElementById('previewContent'),
+                    closePreview: document.getElementById('closePreview'),
+                    historyList: document.getElementById('historyList'),
+                    textCost: document.getElementById('textCost'),
+                    imageCost: document.getElementById('imageCost'),
+                    totalCost: document.getElementById('totalCost')
+                };
+            }
+
+            initializeEditor() {
+                this.quill = new Quill('#editor', {
+                    theme: 'snow',
+                    placeholder: '블로그 내용을 입력하세요...',
+                    modules: {
+                        toolbar: [
+                            [{ 'header': [1, 2, 3, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            ['blockquote', 'code-block'],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            [{ 'script': 'sub'}, { 'script': 'super' }],
+                            [{ 'indent': '-1'}, { 'indent': '+1' }],
+                            ['link', 'image'],
+                            ['clean']
+                        ]
+                    }
+                });
+            }
+
+            bindEvents() {
+                // 모드 변경
+                document.querySelectorAll('input[name="mode"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        if (e.target.value === 'keywords') {
+                            this.elements.keywordsSection.classList.remove('hidden');
+                            this.elements.promptSection.classList.add('hidden');
+                        } else {
+                            this.elements.keywordsSection.classList.add('hidden');
+                            this.elements.promptSection.classList.remove('hidden');
+                        }
+                    });
+                });
+
+                // 비용 계산
+                ['targetTokens', 'imageCount', 'textModel'].forEach(id => {
+                    this.elements[id].addEventListener('change', () => this.updateCost());
+                });
+
+                // 생성 버튼
+                this.elements.generateBtn.addEventListener('click', () => this.generateBlog());
+
+                // 미리보기
+                this.elements.previewBtn.addEventListener('click', () => this.showPreview());
+
+                // 저장
+                this.elements.saveBtn.addEventListener('click', () => this.saveBlog());
+
+                // 게시
+                this.elements.publishBtn.addEventListener('click', () => this.publishBlog());
+
+                // 미리보기 닫기
+                this.elements.closePreview.addEventListener('click', () => {
+                    this.elements.previewModal.classList.add('hidden');
+                });
+
+                // 초기 비용 계산
+                this.updateCost();
+            }
+
+            updateCost() {
+                const tokens = parseInt(this.elements.targetTokens.value);
+                const imageCount = parseInt(this.elements.imageCount.value);
+                const model = this.elements.textModel.value;
+
+                // 간단한 비용 계산 (실제로는 API 기반 계산 필요)
+                const textCost = (tokens / 1000) * 0.002; // $0.002 per 1K tokens
+                const imageCost = imageCount * 0.02; // $0.02 per image
+
+                this.elements.textCost.textContent = `$${textCost.toFixed(4)}`;
+                this.elements.imageCost.textContent = `$${imageCost.toFixed(4)}`;
+                this.elements.totalCost.textContent = `$${(textCost + imageCost).toFixed(4)}`;
+            }
+
+            async generateBlog() {
+                const mode = document.querySelector('input[name="mode"]:checked').value;
+                const inputData = mode === 'keywords' ?
+                    this.elements.keywords.value :
+                    this.elements.prompt.value;
+
+                if (!inputData) {
+                    alert(mode === 'keywords' ? '키워드를 입력해주세요.' : '프롬프트를 입력해주세요.');
+                    return;
+                }
+
+                // 로딩 상태 표시
+                this.showLoading();
+                this.elements.generateBtn.disabled = true;
+                this.elements.generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>생성 중...';
+
+                try {
+                    // 1. 블로그 내용 생성
+                    this.updateStatus('블로그 내용 생성 중...');
+                    const content = await this.generateContent(inputData, mode);
+
+                    // 2. 이미지 생성
+                    this.updateStatus('이미지 생성 중...');
+                    const images = await this.generateImages(content, parseInt(this.elements.imageCount.value));
+
+                    // 결과 저장
+                    this.currentResult = {
+                        title: this.elements.blogTitle.value || this.generateTitle(inputData, mode),
+                        content: content,
+                        images: images,
+                        metadata: {
+                            category: this.elements.category.value,
+                            mode: mode,
+                            model: this.elements.textModel.value,
+                            tokens: this.elements.targetTokens.value,
+                            createdAt: new Date().toISOString()
+                        }
+                    };
+
+                    // 결과 표시
+                    this.showResults();
+
+                    // 히스토리에 추가
+                    this.addToHistory({
+                        topic: { title: this.currentResult.title },
+                        result: { success: true, url: '#' },
+                        duration: Math.random() * 10 + 5, // 시뮬레이션
+                        imagesGenerated: images.length,
+                        timestamp: new Date().toLocaleString('ko-KR')
+                    });
+
+                } catch (error) {
+                    console.error('생성 오류:', error);
+                    alert('블로그 생성 중 오류가 발생했습니다.');
+                } finally {
+                    this.hideLoading();
+                    this.elements.generateBtn.disabled = false;
+                    this.elements.generateBtn.innerHTML = '<i class="fas fa-magic mr-2"></i>블로그 생성하기';
+                }
+            }
+
+            async generateContent(inputData, mode) {
+                // 간단한 내용 생성 (실제로는 AI API 호출)
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                const templates = {
+                    keywords: `# ${inputData}에 대한 완벽한 가이드
+
+## 서론
+현대 사회에서 ${inputData}는 매우 중요한 주제가 되었습니다. 많은 사람들이 이 분야에 대해 관심을 가지고 있습니다.
+
+## 본문
+
+### 핵심 개념
+${inputData}의 기본 개념을 이해하는 것이 중요합니다. 이는 다른 모든 내용의 기반이 됩니다.
+
+### 실전 적용
+이론을 실제에 적용해보는 단계입니다. 실제 사례와 경험을 통해 깊이 있는 이해를 얻을 수 있습니다.
+
+### 전문가 팁
+경험 많은 전문가들의 조언을 통해 더 나은 결과를 얻을 수 있습니다.
+
+## 결론
+${inputData}에 대해 알아본 내용을 정리하며 마무리합니다. 꾸준한 연습과 학습이 중요합니다.`,
+
+                    prompt: `# ${inputData}
+
+## 생성된 내용
+
+프롬프트를 바탕으로 생성된 상세한 내용입니다. 각 섹션은 독자의 이해를 돕기 위해 체계적으로 구성되었습니다.
+
+### 심화 분석
+주제에 대한 깊이 있는 분석과 통찰을 제공합니다.
+
+### 실용적 가이드
+독자가 바로 적용할 수 있는 실용적인 정보와 방법을 제시합니다.`
+                };
+
+                return templates[mode] || templates.keywords;
+            }
+
+            async generateImages(content, count) {
+                // 간단한 이미지 생성 (실제로는 AI 이미지 API 호출)
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const imageKeywords = ['개념', '실전', '가이드', '결과', '팁'];
+                return Array.from({ length: Math.min(count, imageKeywords.length) }, (_, i) => ({
+                    id: i + 1,
+                    url: `https://picsum.photos/seed/${imageKeywords[i]}${Date.now()}/400/300.jpg`,
+                    alt: `${imageKeywords[i]} 관련 이미지`
+                }));
+            }
+
+            generateTitle(inputData, mode) {
+                const templates = {
+                    keywords: `${inputData}: 완벽한 가이드 2024`,
+                    prompt: `${inputData}: 심층 분석과 실용 가이드`
+                };
+                return templates[mode] || templates.keywords;
+            }
+
+            showLoading() {
+                this.elements.initialState.classList.add('hidden');
+                this.elements.resultDisplay.classList.add('hidden');
+                this.elements.loadingState.classList.remove('hidden');
+                this.elements.statusIndicator.classList.remove('hidden');
+            }
+
+            hideLoading() {
+                this.elements.loadingState.classList.add('hidden');
+                this.elements.statusIndicator.classList.add('hidden');
+            }
+
+            updateStatus(text) {
+                this.elements.statusText.textContent = text;
+            }
+
+            showResults() {
+                this.hideLoading();
+                this.elements.resultDisplay.classList.remove('hidden');
+
+                // 제목 설정
+                this.elements.editTitle.value = this.currentResult.title;
+
+                // 내용 설정
+                this.quill.root.innerHTML = this.currentResult.content.replace(/\n/g, '<br>');
+
+                // 이미지 표시
+                this.elements.generatedImages.innerHTML = this.currentResult.images.map(img => `
+                    <div class="relative group">
+                        <img src="${img.url}" alt="${img.alt}" class="w-full h-40 object-cover rounded-lg">
+                        <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                            <button class="text-white bg-blue-500 px-3 py-1 rounded text-sm">보기</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            showPreview() {
+                if (!this.currentResult) return;
+
+                const html = marked(this.quill.root.textContent);
+                this.elements.previewContent.innerHTML = `
+                    <h1 class="text-3xl font-bold mb-4">${this.currentResult.title}</h1>
+                    <div class="text-gray-600 mb-6">
+                        카테고리: ${this.currentResult.metadata.category} |
+                        생성 시간: ${new Date(this.currentResult.metadata.createdAt).toLocaleString('ko-KR')}
+                    </div>
+                    <div>${html}</div>
+                    ${this.currentResult.images.length > 0 ? `
+                        <h3 class="text-xl font-bold mt-6 mb-4">관련 이미지</h3>
+                        <div class="grid grid-cols-3 gap-4">
+                            ${this.currentResult.images.map(img => `
+                                <img src="${img.url}" alt="${img.alt}" class="w-full h-32 object-cover rounded-lg">
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                `;
+
+                this.elements.previewModal.classList.remove('hidden');
+            }
+
+            saveBlog() {
+                if (!this.currentResult) return;
+
+                const blogData = {
+                    ...this.currentResult,
+                    title: this.elements.editTitle.value,
+                    content: this.quill.root.innerHTML,
+                    status: 'draft'
+                };
+
+                // localStorage에 저장 (실제로는 서버 API 호출)
+                const savedBlogs = JSON.parse(localStorage.getItem('savedBlogs') || '[]');
+                savedBlogs.push({ ...blogData, id: Date.now() });
+                localStorage.setItem('savedBlogs', JSON.stringify(savedBlogs));
+
+                alert('블로그가 저장되었습니다!');
+            }
+
+            publishBlog() {
+                if (!this.currentResult) return;
+
+                if (confirm('이 블로그를 게시하시겠습니까?')) {
+                    // 실제로는 서버 API 호출
+                    alert('블로그가 성공적으로 게시되었습니다!');
+                }
+            }
+
+            addToHistory(item) {
+                this.history.unshift(item);
+                if (this.history.length > 10) {
+                    this.history = this.history.slice(0, 10);
+                }
+                this.updateHistoryDisplay();
+                localStorage.setItem('blogHistory', JSON.stringify(this.history));
+            }
+
+            loadHistory() {
+                const saved = localStorage.getItem('blogHistory');
+                if (saved) {
+                    this.history = JSON.parse(saved);
+                    this.updateHistoryDisplay();
+                }
+            }
+
+            updateHistoryDisplay() {
+                if (this.history.length === 0) {
+                    this.elements.historyList.innerHTML = `
+                        <div class="text-center py-8 text-gray-500">
+                            <p>생성 히스토리가 없습니다</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                this.elements.historyList.innerHTML = this.history.map(item => `
+                    <div class="border rounded-lg p-4 hover:bg-gray-50 transition">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-semibold">${item.topic.title}</h4>
+                            <span class="text-xs text-gray-500">${item.timestamp}</span>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <span class="mr-4">⏱️ ${item.duration.toFixed(1)}s</span>
+                            <span class="mr-4">🖼️ ${item.imagesGenerated}개</span>
+                            <span class="${item.result.success ? 'text-green-600' : 'text-red-600'}">
+                                ${item.result.success ? '✅ 성공' : '❌ 실패'}
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            new AutoBlogGenerator();
+        });
+    </script>
 </body>
 </html>

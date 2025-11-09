@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 쇼츠 생성기 - 수정 버전</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .generating {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- 통합 네비게이션 로드 -->
+    <div id="navigation-container"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 헤더 -->
+        <div class="gradient-bg rounded-xl shadow-xl p-8 mb-8 text-white">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold mb-3">🎬 쇼츠 생성기</h1>
+                <p class="text-xl opacity-90">AI 기반 쇼츠 콘텐츠 생성 (클라이언트 사이드 버전)</p>
+            </div>
+        </div>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- 입력 패널 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 card-hover">
+                <h3 class="text-xl font-bold mb-4">쇼츠 생성 옵션</h3>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">키워드 또는 프롬프트</label>
+                        <input
+                            type="text"
+                            id="keywordsInput"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="예: 운동 루틴, 요리 레시피"
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">생성 모드</label>
+                        <select id="modeSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="keyword">키워드 기반</option>
+                            <option value="prompt">프롬프트 기반</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">영상 길이 (초)</label>
+                        <select id="durationSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="30">30초</option>
+                            <option value="45">45초</option>
+                            <option value="60">60초</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">장면 수</label>
+                        <input
+                            type="number"
+                            id="sceneCountInput"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                            value="5"
+                            min="3"
+                            max="8"
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">이미지 스타일</label>
+                        <select id="imageStyleSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="실사">실사</option>
+                            <option value="애니메이션">애니메이션</option>
+                            <option value="3D 렌더">3D 렌더</option>
+                            <option value="판타지 아트">판타지 아트</option>
+                            <option value="영화처럼">영화처럼</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button id="generateBtn" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-xl font-bold text-lg hover:shadow-xl transition mt-6">
+                    <i class="fas fa-magic mr-2"></i>쇼츠 생성하기
+                </button>
+            </div>
+
+            <!-- 결과 패널 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 card-hover">
+                <h3 class="text-xl font-bold mb-4">생성 결과</h3>
+
+                <div id="resultContainer">
+                    <!-- 로딩 상태 -->
+                    <div id="loadingState" class="hidden">
+                        <div class="text-center py-8">
+                            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                            <p class="mt-4 text-gray-600">쇼츠 생성 중...</p>
+                            <div id="progressBar" class="w-full bg-gray-200 rounded-full h-2 mt-4">
+                                <div id="progressFill" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 결과 표시 -->
+                    <div id="resultDisplay" class="hidden">
+                        <div class="space-y-4">
+                            <!-- 스크립트 -->
+                            <div>
+                                <h4 class="font-semibold mb-2">생성된 스크립트</h4>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p id="scriptResult" class="text-gray-700"></p>
+                                </div>
+                            </div>
+
+                            <!-- 장면 -->
+                            <div>
+                                <h4 class="font-semibold mb-2">생성된 장면</h4>
+                                <div id="scenesContainer" class="space-y-2">
+                                    <!-- 장면이 여기에 표시됨 -->
+                                </div>
+                            </div>
+
+                            <!-- 작업 버튼 -->
+                            <div class="flex space-x-3">
+                                <button id="downloadBtn" class="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
+                                    <i class="fas fa-download mr-2"></i>다운로드
+                                </button>
+                                <button id="shareBtn" class="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
+                                    <i class="fas fa-share mr-2"></i>공유
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 초기 상태 -->
+                    <div id="initialState">
+                        <div class="text-center py-12 text-gray-500">
+                            <i class="fas fa-film text-6xl mb-4"></i>
+                            <p>쇼츠 생성 버튼을 눌러 시작하세요</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 네비게이션 로드 스크립트 -->
+    <script src="script.js"></script>
+
+    <script>
+        // 클라이언트 사이드 쇼츠 생성 (API 호출 없이)
+        class ShortsGenerator {
+            constructor() {
+                this.initializeElements();
+                this.bindEvents();
+            }
+
+            initializeElements() {
+                this.elements = {
+                    keywordsInput: document.getElementById('keywordsInput'),
+                    modeSelect: document.getElementById('modeSelect'),
+                    durationSelect: document.getElementById('durationSelect'),
+                    sceneCountInput: document.getElementById('sceneCountInput'),
+                    imageStyleSelect: document.getElementById('imageStyleSelect'),
+                    generateBtn: document.getElementById('generateBtn'),
+                    loadingState: document.getElementById('loadingState'),
+                    resultDisplay: document.getElementById('resultDisplay'),
+                    initialState: document.getElementById('initialState'),
+                    scriptResult: document.getElementById('scriptResult'),
+                    scenesContainer: document.getElementById('scenesContainer'),
+                    progressFill: document.getElementById('progressFill'),
+                    downloadBtn: document.getElementById('downloadBtn'),
+                    shareBtn: document.getElementById('shareBtn')
+                };
+            }
+
+            bindEvents() {
+                this.elements.generateBtn.addEventListener('click', () => this.generateShorts());
+                this.elements.downloadBtn.addEventListener('click', () => this.downloadResults());
+                this.elements.shareBtn.addEventListener('click', () => this.shareResults());
+            }
+
+            async generateShorts() {
+                const keywords = this.elements.keywordsInput.value.trim();
+                if (!keywords) {
+                    alert('키워드를 입력해주세요.');
+                    return;
+                }
+
+                // 로딩 상태 표시
+                this.showLoading();
+                this.elements.generateBtn.disabled = true;
+                this.elements.generateBtn.classList.add('generating');
+                this.elements.generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>생성 중...';
+
+                try {
+                    // 프론트엔드에서 직접 생성 (API 호출 없이)
+                    await this.simulateGeneration();
+
+                    // 결과 표시
+                    this.showResults();
+                } catch (error) {
+                    console.error('생성 오류:', error);
+                    alert('생성 중 오류가 발생했습니다.');
+                } finally {
+                    this.elements.generateBtn.disabled = false;
+                    this.elements.generateBtn.classList.remove('generating');
+                    this.elements.generateBtn.innerHTML = '<i class="fas fa-magic mr-2"></i>쇼츠 생성하기';
+                }
+            }
+
+            async simulateGeneration() {
+                const keywords = this.elements.keywordsInput.value;
+                const mode = this.elements.modeSelect.value;
+                const duration = parseInt(this.elements.durationSelect.value);
+                const sceneCount = parseInt(this.elements.sceneCountInput.value);
+                const imageStyle = this.elements.imageStyleSelect.value;
+
+                // 스크립트 생성 (시뮬레이션)
+                await this.updateProgress(20, '스크�립트 생성 중...');
+                const script = this.generateScript(keywords, mode, duration);
+
+                // 장면 생성 (시뮬레이션)
+                await this.updateProgress(60, '장면 생성 중...');
+                const scenes = this.generateScenes(script, sceneCount, imageStyle);
+
+                // 이미지 생성 (시뮬레이션)
+                await this.updateProgress(90, '이미지 생성 중...');
+                scenes.forEach(scene => {
+                    scene.imageUrl = `https://picsum.photos/seed/${scene.keyword}/400/300.jpg`;
+                });
+
+                // 완료
+                await this.updateProgress(100, '완료!');
+
+                // 결과 저장
+                this.currentResult = {
+                    script,
+                    scenes,
+                    metadata: {
+                        keywords,
+                        mode,
+                        duration,
+                        sceneCount,
+                        imageStyle,
+                        createdAt: new Date().toISOString()
+                    }
+                };
+            }
+
+            generateScript(keywords, mode, duration) {
+                const scripts = {
+                    keyword: `🎬 ${keywords}에 대한 짧은 영상입니다.\n\n첫 번째 장면: ${keywords}의 기본 개념을 소개합니다.\n두 번째 장면: 실제 적용 방법을 보여줍니다.\n세 번째 장면: 팁과 요령을 공유합니다.\n마지막 장면: 요약 및 마무리.`,
+
+                    prompt: `🎬 "${keywords}" 주제로 창의적인 쇼츠 영상입니다.\n\n도입부: 시청자의 관심을 끄는 흥미로운 시작.\n전개부: 주제에 대한 깊이 있는 탐구.\n절정부: 긴장감 넘치는 하이라이트.\n결말부: 여운을 남기는 마무리.`
+                };
+
+                return scripts[mode] || scripts.keyword;
+            }
+
+            generateScenes(script, sceneCount, imageStyle) {
+                const sceneTemplates = [
+                    { keyword: 'intro', description: '흥미로운 도입 장면' },
+                    { keyword: 'main', description: '주요 내용 전개' },
+                    { keyword: 'detail', description: '상세한 설명' },
+                    { keyword: 'example', description: '실제 예시' },
+                    { keyword: 'tip', description: '유용한 팁' },
+                    { keyword: 'conclusion', description: '마무리 정리' },
+                    { keyword: 'action', description: '실천 행동' },
+                    { keyword: 'result', description: '기대 결과' }
+                ];
+
+                return Array.from({ length: Math.min(sceneCount, sceneTemplates.length) }, (_, i) => ({
+                    id: i + 1,
+                    ...sceneTemplates[i],
+                    duration: Math.floor(60 / sceneCount), // 균등 분배
+                    style: imageStyle
+                }));
+            }
+
+            async updateProgress(percent, message) {
+                this.elements.progressFill.style.width = `${percent}%`;
+                await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+            }
+
+            showLoading() {
+                this.elements.initialState.classList.add('hidden');
+                this.elements.resultDisplay.classList.add('hidden');
+                this.elements.loadingState.classList.remove('hidden');
+                this.elements.progressFill.style.width = '0%';
+            }
+
+            showResults() {
+                this.elements.loadingState.classList.add('hidden');
+                this.elements.resultDisplay.classList.remove('hidden');
+
+                // 스크립트 표시
+                this.elements.scriptResult.textContent = this.currentResult.script;
+
+                // 장면 표시
+                this.elements.scenesContainer.innerHTML = this.currentResult.scenes.map(scene => `
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <img src="${scene.imageUrl}" alt="${scene.description}" class="w-20 h-20 object-cover rounded">
+                        <div class="flex-1">
+                            <div class="font-semibold">장면 ${scene.id}: ${scene.description}</div>
+                            <div class="text-sm text-gray-600">길이: ${scene.duration}초 | 스타일: ${scene.style}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            downloadResults() {
+                if (!this.currentResult) return;
+
+                const data = {
+                    script: this.currentResult.script,
+                    scenes: this.currentResult.scenes,
+                    metadata: this.currentResult.metadata
+                };
+
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `shorts-${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            shareResults() {
+                if (!this.currentResult) return;
+
+                const shareText = `🎬 "${this.currentResult.metadata.keywords}" 주제의 쇼츠를 생성했습니다!\n\n${this.currentResult.script.substring(0, 100)}...`;
+
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'AI 쇼츠 생성 결과',
+                        text: shareText
+                    });
+                } else {
+                    navigator.clipboard.writeText(shareText);
+                    alert('결과가 클립보드에 복사되었습니다!');
+                }
+            }
+        }
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            new ShortsGenerator();
+        });
+    </script>
+</body>
+</html>
